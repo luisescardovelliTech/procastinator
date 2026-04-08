@@ -1,0 +1,60 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="false" level="WARNING" enabled_by_default="false">
+      <option name="ignoredPackages">
+        <list>
+          <option value="aiohttp" />
+          <option value="aiosignal" />
+          <option value="astroid" />
+          <option value="beautifulsoup4" />
+          <option value="bs4" />
+          <option value="colorama" />
+          <option value="colorlog" />
+          <option value="contourpy" />
+          <option value="cycler" />
+          <option value="dill" />
+          <option value="fonttools" />
+          <option value="frozenlist" />
+          <option value="fuzzywuzzy" />
+          <option value="h11" />
+          <option value="ijson" />
+          <option value="isort" />
+          <option value="kiwisolver" />
+          <option value="Levenshtein" />
+          <option value="matplotlib" />
+          <option value="mccabe" />
+          <option value="multidict" />
+          <option value="numpy" />
+          <option value="operagxdriver" />
+          <option value="outcome" />
+          <option value="pandas" />
+          <option value="pillow" />
+          <option value="platformdirs" />
+          <option value="pylint" />
+          <option value="pyparsing" />
+          <option value="PySocks" />
+          <option value="python-dateutil" />
+          <option value="python-Levenshtein" />
+          <option value="pytz" />
+          <option value="rapidfuzz" />
+          <option value="roman" />
+          <option value="seaborn" />
+          <option value="selenium" />
+          <option value="six" />
+          <option value="sniffio" />
+          <option value="sortedcontainers" />
+          <option value="soupsieve" />
+          <option value="tomlkit" />
+          <option value="trio" />
+          <option value="trio-websocket" />
+          <option value="twisted-iocpsupport" />
+          <option value="tzdata" />
+          <option value="wget" />
+          <option value="wsproto" />
+          <option value="yarl" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
