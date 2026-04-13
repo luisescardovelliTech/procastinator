@@ -1,0 +1,70 @@
+body {
+    font-family: "Segoe UI", Tahoma, sans-serif;
+}
+
+.kanban-column {
+    min-height: 360px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.task-card {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 0.875rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.05);
+}
+
+.task-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    border-radius: 0.25rem;
+    padding: 0.2rem 0.45rem;
+    color: #fff;
+    margin-bottom: 0.35rem;
+}
+
+.task-title {
+    font-size: 1rem;
+    margin-bottom: 0.2rem;
+}
+
+.task-desc {
+    font-size: 0.875rem;
+    color: #495057;
+    margin-bottom: 0.35rem;
+}
+
+.task-tags {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-bottom: 0.55rem;
+}
+
+.border-dashed {
+    border-style: dashed !important;
+}
+
+.toast-box {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    background: #111;
+    color: #fff;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.2s ease;
+    z-index: 1080;
+    font-size: 0.875rem;
+}
+
+.toast-box.show {
+    opacity: 1;
+    transform: translateY(0);
+}
