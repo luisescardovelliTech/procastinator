@@ -4,7 +4,6 @@ const API = {
 };
 let desculpasCache = new Map();
 let editandoDesculpaId = null;
-let desculpasOriginais = [];
 
 function escapeHtml(text) {
     return $("<div>").text(text || "").html();
@@ -21,15 +20,6 @@ function extrairMensagemErro(xhr, fallback) {
         return xhr.responseText;
     }
     return fallback;
-}
-
-function normalizarTextoBusca(valor) {
-    return (valor || "")
-        .toString()
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .trim();
 }
 
 function carregarTarefasNoSelect() {
@@ -115,45 +105,14 @@ function buildDesculpaCard(desculpa) {
         </article>`;
 }
 
-function renderizarDesculpas(desculpas, filtrando) {
+function renderizarDesculpas(desculpas) {
     desculpasCache = new Map(desculpas.map(d => [d.id, d]));
-    $("#count-desculpas").text(desculpas.length);
     if (!desculpas.length) {
-        const mensagemVazia = filtrando
-            ? "Nenhum registro encontrado para esse filtro."
-            : "Nenhuma desculpa registrada ainda.";
-        const botao = filtrando
-            ? ""
-            : "<button type=\"button\" class=\"btn btn-sm btn-outline-dark mt-2\" id=\"btn-ir-form-desculpa\">Registrar a primeira</button>";
-        $("#lista-desculpas").html(`
-            <div class="desculpa-empty text-secondary">
-                ${mensagemVazia}<br>
-                ${botao}
-            </div>`);
+        $("#lista-desculpas").html("<div class='text-secondary'>Nenhuma desculpa registrada ainda.</div>");
         return;
     }
 
     $("#lista-desculpas").html(desculpas.map(buildDesculpaCard).join(""));
-}
-
-function filtrarDesculpas(termo) {
-    const filtro = normalizarTextoBusca(termo);
-    if (!filtro) {
-        renderizarDesculpas(desculpasOriginais, false);
-        return;
-    }
-
-    const filtradas = desculpasOriginais.filter(function (desculpa) {
-        const comentario = normalizarTextoBusca(desculpa.comentario);
-        const tarefa = normalizarTextoBusca(desculpa.tarefaTitulo);
-        const tarefaId = normalizarTextoBusca(desculpa.tarefaId);
-        const dataHora = normalizarTextoBusca(formatarDataHora(desculpa.dataHora));
-        return comentario.includes(filtro)
-            || tarefa.includes(filtro)
-            || tarefaId.includes(filtro)
-            || dataHora.includes(filtro);
-    });
-    renderizarDesculpas(filtradas, true);
 }
 
 function preencherModalDesculpa(desculpa) {
@@ -167,10 +126,7 @@ function preencherModalDesculpa(desculpa) {
 
 function carregarDesculpas() {
     $.get(API.desculpas)
-        .done(function (desculpas) {
-            desculpasOriginais = desculpas;
-            filtrarDesculpas($("#filtro-desculpas").val());
-        })
+        .done(renderizarDesculpas)
         .fail(() => showToast("Falha ao carregar log de desculpas."));
 }
 
@@ -184,14 +140,6 @@ $(function () {
 
     $("#detalhe-desculpa-eficacia").on("input", function () {
         $("#detalhe-eficacia-valor").text(`${$(this).val()}/10`);
-    });
-
-    $("#filtro-desculpas").on("input", function () {
-        filtrarDesculpas($(this).val());
-    });
-
-    $(document).on("click", "#btn-ir-form-desculpa", function () {
-        document.getElementById("desculpa-comentario").focus();
     });
 
     $(document).on("click", ".btn-view-desculpa", function () {
