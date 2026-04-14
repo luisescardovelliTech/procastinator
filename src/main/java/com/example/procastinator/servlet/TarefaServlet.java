@@ -45,7 +45,12 @@ public class TarefaServlet extends HttpServlet {
         tarefa.setDescricao(getString(body, "descricao", ""));
         tarefa.setStatus(parseStatus(body));
         tarefa.setDataCriacao(LocalDate.now());
-        tarefa.setDataPrazo(parsePrazo(body));
+        LocalDate prazo = parsePrazo(body, null);
+        if (prazo == null) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Informe a data de prazo da tarefa.");
+            return;
+        }
+        tarefa.setDataPrazo(prazo);
         tarefa.setCategoria(parseCategoria(body));
         tarefa.setXingamentos(parseXingamentos(body));
         dao.salvar(tarefa);
@@ -74,7 +79,7 @@ public class TarefaServlet extends HttpServlet {
                 tarefa.setDescricao(body.get("descricao").getAsString());
             }
             if (body.has("dataPrazo")) {
-                tarefa.setDataPrazo(LocalDate.parse(body.get("dataPrazo").getAsString()));
+                tarefa.setDataPrazo(parsePrazo(body, null));
             }
             if (body.has("status")) {
                 tarefa.setStatus(StatusTarefa.valueOf(body.get("status").getAsString()));
@@ -124,11 +129,19 @@ public class TarefaServlet extends HttpServlet {
         return StatusTarefa.valueOf(body.get("status").getAsString());
     }
 
-    private LocalDate parsePrazo(JsonObject body) {
+    private LocalDate parsePrazo(JsonObject body, LocalDate defaultValue) {
         if (!body.has("dataPrazo") || body.get("dataPrazo").isJsonNull()) {
-            return LocalDate.now().plusDays(2);
+            return defaultValue;
         }
-        return LocalDate.parse(body.get("dataPrazo").getAsString());
+        String valor = body.get("dataPrazo").getAsString();
+        if (valor == null || valor.isBlank()) {
+            return defaultValue;
+        }
+        String normalizado = valor.trim();
+        if (normalizado.length() > 10) {
+            normalizado = normalizado.substring(0, 10);
+        }
+        return LocalDate.parse(normalizado);
     }
 
     private Categoria parseCategoria(JsonObject body) {

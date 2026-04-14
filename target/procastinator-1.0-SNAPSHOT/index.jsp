@@ -12,11 +12,13 @@
 <nav class="navbar navbar-expand-lg bg-white border-bottom">
     <div class="container-fluid">
         <span class="navbar-brand fw-bold">Procrastinator</span>
-        <div class="navbar-nav ms-auto gap-lg-3">
+        <div class="navbar-nav ms-auto gap-lg-3 align-items-lg-center">
             <span class="nav-link">Quadro de Avisos</span>
-            <span class="nav-link active fw-bold border-bottom border-dark">Lista do Não Fazer</span>
+            <a class="nav-link btn btn-link p-0 fw-bold border-bottom border-dark"
+               href="${pageContext.request.contextPath}/index.jsp">Lista do Nao Fazer</a>
             <span class="nav-link">Timer de Descanso</span>
-            <span class="nav-link">Log de Desculpas</span>
+            <a class="nav-link btn btn-link p-0"
+               href="${pageContext.request.contextPath}/desculpas.jsp">Log de Desculpas</a>
         </div>
     </div>
 </nav>
@@ -27,9 +29,11 @@
             <h6 class="text-uppercase text-secondary small fw-bold mb-3">Painel</h6>
             <div class="list-group list-group-flush small">
                 <span class="list-group-item bg-transparent text-secondary">Quadro de Avisos</span>
-                <span class="list-group-item bg-white fw-semibold rounded">Lista do Não Fazer</span>
+                <a class="list-group-item list-group-item-action bg-white fw-semibold rounded"
+                   href="${pageContext.request.contextPath}/index.jsp">Lista do Nao Fazer</a>
                 <span class="list-group-item bg-transparent text-secondary">Timer de Descanso</span>
-                <span class="list-group-item bg-transparent text-secondary">Log de Desculpas</span>
+                <a class="list-group-item list-group-item-action bg-transparent text-secondary"
+                   href="${pageContext.request.contextPath}/desculpas.jsp">Log de Desculpas</a>
                 <span class="list-group-item bg-transparent text-secondary">Estatísticas de Culpa</span>
             </div>
             <div class="card mt-4 border-0 bg-transparent">
@@ -42,6 +46,7 @@
         </aside>
 
         <main class="col-12 col-lg-10 p-4">
+            <section id="view-kanban">
             <div class="row mb-3 text-uppercase fw-bold small text-secondary">
                 <div class="col-12 col-lg-4">Backlog <span id="count-backlog" class="ms-2"></span></div>
                 <div class="col-12 col-lg-4">Esperando <span id="count-esperando" class="ms-2"></span></div>
@@ -63,6 +68,7 @@
                     <div id="column-quase-fiz" class="kanban-column"></div>
                 </div>
             </div>
+            </section>
         </main>
     </div>
 </div>
@@ -78,6 +84,10 @@
                 <form id="task-form" class="d-flex flex-column gap-3">
                     <input id="titulo" class="form-control" placeholder="Título da tarefa" maxlength="40" required>
                     <textarea id="descricao" class="form-control" rows="3" placeholder="Descrição curta"></textarea>
+                    <div>
+                        <label for="data-prazo" class="form-label small text-uppercase text-secondary">Data prevista de termino</label>
+                        <input id="data-prazo" type="date" class="form-control" required>
+                    </div>
                     <select id="status" class="form-select">
                         <option value="BACKLOG">Backlog</option>
                         <option value="ESPERANDO">Esperando</option>
@@ -89,6 +99,44 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" id="btn-salvar" class="btn btn-dark">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="taskDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5">Detalhes da Tarefa</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body d-flex flex-column gap-3">
+                <div>
+                    <div class="small text-uppercase text-secondary">Titulo</div>
+                    <div id="detalhe-titulo" class="fw-semibold"></div>
+                </div>
+                <div>
+                    <div class="small text-uppercase text-secondary">Descricao</div>
+                    <div id="detalhe-descricao"></div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="small text-uppercase text-secondary">Status</div>
+                        <div id="detalhe-status"></div>
+                    </div>
+                    <div class="col-6">
+                        <div class="small text-uppercase text-secondary">Categoria</div>
+                        <div id="detalhe-categoria"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="small text-uppercase text-secondary">Prazo</div>
+                    <div id="detalhe-prazo"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
             </div>
         </div>
     </div>

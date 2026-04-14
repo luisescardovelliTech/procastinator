@@ -2,6 +2,14 @@ body {
     font-family: "Segoe UI", Tahoma, sans-serif;
 }
 
+.menu-view {
+    text-decoration: none;
+}
+
+.menu-view.active {
+    color: #212529 !important;
+}
+
 .kanban-column {
     min-height: 360px;
     display: flex;
@@ -45,6 +53,16 @@ body {
     margin-bottom: 0.55rem;
 }
 
+.task-status-actions,
+.task-crud-actions {
+    flex-wrap: wrap;
+}
+
+.task-crud-actions {
+    border-top: 1px solid #f1f3f5;
+    padding-top: 0.5rem;
+}
+
 .border-dashed {
     border-style: dashed !important;
 }
@@ -68,3 +86,62 @@ body {
     opacity: 1;
     transform: translateY(0);
 }
+
+.desculpa-card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-left: 4px solid #6c757d;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.04);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.desculpa-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0.4rem 0.8rem rgba(0, 0, 0, 0.08);
+}
+
+.desculpa-badge {
+    background: #f1f3f5;
+    color: #495057;
+    font-size: 0.7rem;
+    font-weight: 700;
+    border-radius: 0.3rem;
+    padding: 0.15rem 0.45rem;
+}
+
+.desculpa-stars {
+    font-size: 0.9rem;
+    letter-spacing: 0.08rem;
+    color: #6c757d;
+}
+
+.desculpas-page .desculpas-hero {
+    background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+    border: 1px solid #e9ecef;
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+}
+
+.desculpa-form-card {
+    border-radius: 0.75rem;
+}
+
+.desculpa-form-card .form-control:focus,
+.desculpa-form-card .form-select:focus,
+.desculpa-form-card .form-range:focus {
+    box-shadow: 0 0 0 0.2rem rgba(33, 37, 41, 0.12);
+}
+
+.desculpa-filtro {
+    max-width: 300px;
+}
+
+.desculpa-empty {
+    background: #fff;
+    border: 1px dashed #ced4da;
+    border-radius: 0.75rem;
+    padding: 1rem;
+}
+

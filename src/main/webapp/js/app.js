@@ -14,6 +14,24 @@ function showToast(message) {
     setTimeout(() => $toast.removeClass("show"), 2300);
 }
 
+function extrairMensagemErro(xhr, fallback) {
+    if (xhr && xhr.responseText) {
+        return xhr.responseText;
+    }
+    return fallback;
+}
+
+function normalizarDataParaInput(valor) {
+    if (!valor) {
+        return "";
+    }
+    const texto = String(valor).trim();
+    if (texto.length >= 10) {
+        return texto.substring(0, 10);
+    }
+    return texto;
+}
+
 function buildTaskCard(tarefa) {
     const categoria = tarefa.categoria || { nome: "GERAL" };
     const xingamentos = (tarefa.xingamentos || []).map(x => x.mensagem).join(" | ");
@@ -24,10 +42,13 @@ function buildTaskCard(tarefa) {
             <h3 class="task-title">${escapeHtml(tarefa.titulo)}</h3>
             <p class="task-desc">${escapeHtml(tarefa.descricao || "Sem descricao")}</p>
             <div class="task-tags">${escapeHtml(xingamentos || "Sem incentivo agressivo")}</div>
-            <div class="task-actions d-flex gap-2">
+            <div class="task-actions task-status-actions d-flex gap-2 mb-2">
                 <button class="btn btn-sm btn-outline-secondary btn-move" data-status="BACKLOG">Backlog</button>
                 <button class="btn btn-sm btn-outline-secondary btn-move" data-status="ESPERANDO">Esperando</button>
                 <button class="btn btn-sm btn-outline-secondary btn-move" data-status="QUASE_FIZ">Quase Fiz</button>
+            </div>
+            <div class="task-actions task-crud-actions d-flex gap-2">
+                <button class="btn btn-sm btn-outline-dark btn-view">Visualizar</button>
                 <button class="btn btn-sm btn-outline-primary btn-edit">Editar</button>
                 <button class="btn btn-sm btn-outline-danger btn-delete">Excluir</button>
             </div>
@@ -91,10 +112,12 @@ function excluirTarefa(id) {
 
 function montarPayloadFormulario() {
     const categoriaNome = $("#categoria").val().trim();
+    const dataPrazo = normalizarDataParaInput($("#data-prazo").val());
     return {
         titulo: $("#titulo").val().trim(),
         descricao: $("#descricao").val().trim(),
         status: $("#status").val(),
+        dataPrazo: dataPrazo || null,
         categoria: categoriaNome ? { nome: categoriaNome } : null
     };
 }
@@ -110,10 +133,20 @@ function preencherFormularioEdicao(tarefa) {
     editandoId = tarefa.id;
     $("#titulo").val(tarefa.titulo || "");
     $("#descricao").val(tarefa.descricao || "");
+    $("#data-prazo").val(normalizarDataParaInput(tarefa.dataPrazo));
     $("#status").val(tarefa.status || "BACKLOG");
     $("#categoria").val(tarefa.categoria && tarefa.categoria.nome ? tarefa.categoria.nome : "");
     $("#btn-salvar").text("Atualizar");
     $("#taskModal .modal-title").text("Editar Tarefa");
+}
+
+function preencherDetalhesTarefa(tarefa) {
+    const categoriaNome = tarefa.categoria && tarefa.categoria.nome ? tarefa.categoria.nome : "GERAL";
+    $("#detalhe-titulo").text(tarefa.titulo || "Sem titulo");
+    $("#detalhe-descricao").text(tarefa.descricao || "Sem descricao");
+    $("#detalhe-status").text(tarefa.status || "BACKLOG");
+    $("#detalhe-categoria").text(categoriaNome);
+    $("#detalhe-prazo").text(tarefa.dataPrazo || "Nao definido");
 }
 
 $(function () {
@@ -127,6 +160,10 @@ $(function () {
         const payload = montarPayloadFormulario();
         if (!payload.titulo) {
             showToast("Preencha o titulo da tarefa.");
+            return;
+        }
+        if (!payload.dataPrazo) {
+            showToast("Informe a data de prazo da tarefa.");
             return;
         }
 
@@ -143,7 +180,7 @@ $(function () {
                     : "Tarefa atualizada.");
                 editandoId = null;
             })
-            .fail(() => showToast("Erro ao salvar tarefa."));
+            .fail((xhr) => showToast(extrairMensagemErro(xhr, "Erro ao salvar tarefa.")));
     });
 
     $(document).on("click", ".btn-move", function () {
@@ -177,4 +214,16 @@ $(function () {
         preencherFormularioEdicao(tarefa);
         bootstrap.Modal.getOrCreateInstance(document.getElementById("taskModal")).show();
     });
+
+    $(document).on("click", ".btn-view", function () {
+        const id = $(this).closest(".task-card").data("id");
+        const tarefa = tarefasCache.get(id);
+        if (!tarefa) {
+            showToast("Nao foi possivel carregar os detalhes da tarefa.");
+            return;
+        }
+        preencherDetalhesTarefa(tarefa);
+        bootstrap.Modal.getOrCreateInstance(document.getElementById("taskDetailsModal")).show();
+    });
+
 });
