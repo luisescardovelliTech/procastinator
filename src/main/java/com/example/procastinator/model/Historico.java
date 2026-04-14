@@ -32,6 +32,12 @@ public class Historico {
     @Column(name = "data_hora")
     private LocalDateTime dataHora;
 
+    @Column(columnDefinition = "TEXT")
+    private String comentario;
+
+    @Column(name = "nivel_eficacia")
+    private Integer nivelEficacia;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_usuario")
     private Usuario usuario;
