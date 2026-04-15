@@ -17,6 +17,7 @@
             <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/index.jsp">Lista do Nao Fazer</a>
             <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/timer.jsp">Timer de Descanso</a>
             <a class="nav-link btn btn-link p-0 fw-bold border-bottom border-dark" href="${pageContext.request.contextPath}/desculpas.jsp">Log de Desculpas</a>
+            <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/estatisticas.jsp">Estatisticas de Culpa</a>
         </div>
     </div>
 </nav>
@@ -31,7 +32,8 @@
                 <a class="list-group-item list-group-item-action bg-transparent text-secondary"
                    href="${pageContext.request.contextPath}/timer.jsp">Timer de Descanso</a>
                 <a class="list-group-item list-group-item-action bg-white fw-semibold rounded" href="${pageContext.request.contextPath}/desculpas.jsp">Log de Desculpas</a>
-                <span class="list-group-item bg-transparent text-secondary">Estatisticas de Culpa</span>
+                <a class="list-group-item list-group-item-action bg-transparent text-secondary"
+                   href="${pageContext.request.contextPath}/estatisticas.jsp">Estatisticas de Culpa</a>
             </div>
             <div class="card mt-4 border-0 bg-transparent">
                 <div class="card-body p-0 small">
