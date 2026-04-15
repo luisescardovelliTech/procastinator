@@ -13,7 +13,7 @@
     <div class="container-fluid">
         <span class="navbar-brand fw-bold">Procrastinator</span>
         <div class="navbar-nav ms-auto gap-lg-3 align-items-lg-center">
-            <span class="nav-link">Quadro de Avisos</span>
+            <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/quadro-avisos.jsp">Xingamentos e Elogios</a>
             <a class="nav-link btn btn-link p-0 fw-bold border-bottom border-dark"
                href="${pageContext.request.contextPath}/index.jsp">Lista do Nao Fazer</a>
             <a class="nav-link btn btn-link p-0"
@@ -31,7 +31,7 @@
         <aside class="col-12 col-lg-2 border-end bg-body-tertiary p-3">
             <h6 class="text-uppercase text-secondary small fw-bold mb-3">Painel</h6>
             <div class="list-group list-group-flush small">
-                <span class="list-group-item bg-transparent text-secondary">Quadro de Avisos</span>
+                <a class="list-group-item list-group-item-action bg-transparent text-secondary" href="${pageContext.request.contextPath}/quadro-avisos.jsp">Xingamentos e Elogios</a>
                 <a class="list-group-item list-group-item-action bg-white fw-semibold rounded"
                    href="${pageContext.request.contextPath}/index.jsp">Lista do Nao Fazer</a>
                 <a class="list-group-item list-group-item-action bg-transparent text-secondary"
@@ -142,6 +142,25 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="xingamentoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h2 class="modal-title fs-5">Xingamento motivacional</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body pt-1">
+                <div class="xingamento-modal-card">
+                    <div id="xingamento-modal-mensagem" class="xingamento-modal-msg"></div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-dark" data-bs-dismiss="modal">Continuar</button>
             </div>
         </div>
     </div>
