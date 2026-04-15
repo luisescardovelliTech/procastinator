@@ -110,6 +110,40 @@ function excluirTarefa(id) {
     });
 }
 
+function isTransicaoComXingamento(statusAtual, statusDestino) {
+    return (statusAtual === "BACKLOG" && statusDestino === "ESPERANDO")
+        || (statusAtual === "ESPERANDO" && statusDestino === "QUASE_FIZ");
+}
+
+function escolherXingamentoParaTransicao(tarefa, statusDestino) {
+    if (!tarefa || !isTransicaoComXingamento(tarefa.status, statusDestino)) {
+        return null;
+    }
+
+    const xingamentos = Array.isArray(tarefa.xingamentos) ? tarefa.xingamentos : [];
+    const candidatos = xingamentos.filter(function (item) {
+        return (item.tipo || "").toUpperCase() === "XINGAMENTO";
+    });
+
+    if (!candidatos.length) {
+        return `A tarefa "${tarefa.titulo || "Sem titulo"}" mudou de fase. Sem enrolar agora.`;
+    }
+
+    const sorteado = candidatos[Math.floor(Math.random() * candidatos.length)];
+    return sorteado && sorteado.mensagem
+        ? sorteado.mensagem
+        : `A tarefa "${tarefa.titulo || "Sem titulo"}" mudou de fase. Foque no proximo passo.`;
+}
+
+function showXingamentoModal(mensagem) {
+    if (!mensagem) {
+        return;
+    }
+
+    $("#xingamento-modal-mensagem").text(mensagem);
+    bootstrap.Modal.getOrCreateInstance(document.getElementById("xingamentoModal")).show();
+}
+
 function montarPayloadFormulario() {
     const categoriaNome = $("#categoria").val().trim();
     const dataPrazo = normalizarDataParaInput($("#data-prazo").val());
@@ -186,9 +220,27 @@ $(function () {
     $(document).on("click", ".btn-move", function () {
         const id = $(this).closest(".task-card").data("id");
         const status = $(this).data("status");
+        const tarefa = tarefasCache.get(id);
+
+        if (!tarefa) {
+            showToast("Nao foi possivel identificar a tarefa selecionada.");
+            return;
+        }
+
+        if (tarefa.status === status) {
+            showToast("A tarefa ja esta nesse status.");
+            return;
+        }
+
+        const mensagemTransicao = escolherXingamentoParaTransicao(tarefa, status);
+
         atualizarStatus(id, status)
             .done(function () {
                 carregarTarefas();
+                if (mensagemTransicao) {
+                    showXingamentoModal(mensagemTransicao);
+                    return;
+                }
                 showToast("Status atualizado.");
             })
             .fail(() => showToast("Falha ao mover tarefa."));
