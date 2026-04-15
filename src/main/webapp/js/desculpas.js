@@ -3,6 +3,8 @@ const API = {
     desculpas: `${APP_CONTEXT}/api/desculpas`
 };
 let desculpasCache = new Map();
+let desculpasLista = [];
+let filtroAtual = "";
 let editandoDesculpaId = null;
 
 function escapeHtml(text) {
@@ -83,6 +85,40 @@ function montarEstrelas(nivelEficacia) {
     return "★".repeat(estrelasCheias) + "☆".repeat(5 - estrelasCheias);
 }
 
+function normalizarTexto(valor) {
+    return (valor || "")
+        .toString()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+}
+
+function atualizarContadorRegistros(quantidadeVisivel, quantidadeTotal) {
+    const texto = quantidadeVisivel === quantidadeTotal
+        ? `${quantidadeTotal}`
+        : `${quantidadeVisivel}/${quantidadeTotal}`;
+    $("#count-desculpas").text(texto);
+}
+
+function filtrarDesculpas() {
+    const termo = normalizarTexto(filtroAtual);
+    if (!termo) {
+        return desculpasLista;
+    }
+
+    return desculpasLista.filter(function (desculpa) {
+        const alvo = [
+            desculpa.comentario,
+            desculpa.tarefaTitulo,
+            desculpa.usuarioNome,
+            desculpa.tarefaId != null ? `tarefa #${desculpa.tarefaId}` : ""
+        ].map(normalizarTexto).join(" ");
+
+        return alvo.includes(termo);
+    });
+}
+
 function buildDesculpaCard(desculpa) {
     return `
         <article class="desculpa-card" data-id="${desculpa.id}">
@@ -105,14 +141,20 @@ function buildDesculpaCard(desculpa) {
         </article>`;
 }
 
-function renderizarDesculpas(desculpas) {
-    desculpasCache = new Map(desculpas.map(d => [d.id, d]));
-    if (!desculpas.length) {
-        $("#lista-desculpas").html("<div class='text-secondary'>Nenhuma desculpa registrada ainda.</div>");
+function renderizarDesculpas() {
+    const desculpasFiltradas = filtrarDesculpas();
+    desculpasCache = new Map(desculpasLista.map(d => [d.id, d]));
+    atualizarContadorRegistros(desculpasFiltradas.length, desculpasLista.length);
+
+    if (!desculpasFiltradas.length) {
+        const mensagem = filtroAtual.trim()
+            ? "Nenhum registro encontrado para este filtro."
+            : "Nenhuma desculpa registrada ainda.";
+        $("#lista-desculpas").html(`<div class='text-secondary'>${mensagem}</div>`);
         return;
     }
 
-    $("#lista-desculpas").html(desculpas.map(buildDesculpaCard).join(""));
+    $("#lista-desculpas").html(desculpasFiltradas.map(buildDesculpaCard).join(""));
 }
 
 function preencherModalDesculpa(desculpa) {
@@ -126,7 +168,10 @@ function preencherModalDesculpa(desculpa) {
 
 function carregarDesculpas() {
     $.get(API.desculpas)
-        .done(renderizarDesculpas)
+        .done(function (desculpas) {
+            desculpasLista = Array.isArray(desculpas) ? desculpas : [];
+            renderizarDesculpas();
+        })
         .fail(() => showToast("Falha ao carregar log de desculpas."));
 }
 
@@ -140,6 +185,11 @@ $(function () {
 
     $("#detalhe-desculpa-eficacia").on("input", function () {
         $("#detalhe-eficacia-valor").text(`${$(this).val()}/10`);
+    });
+
+    $("#filtro-desculpas").on("input", function () {
+        filtroAtual = $(this).val();
+        renderizarDesculpas();
     });
 
     $(document).on("click", ".btn-view-desculpa", function () {
@@ -229,4 +279,3 @@ $(function () {
             .fail(() => showToast("Erro ao salvar desculpa."));
     });
 });
-
