@@ -1,0 +1,105 @@
+.estatisticas-page {
+    background: #f8fafc;
+    color: #1f2937;
+    border-radius: 0.75rem;
+}
+
+.estatisticas-hero {
+    background: #ffffff;
+    border: 1px solid #dbe3ef;
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+}
+
+.estatisticas-hero .text-secondary {
+    color: #64748b !important;
+}
+
+.culpa-kpi-card {
+    background: #ffffff;
+    border: 1px solid #dbe3ef;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    min-height: 124px;
+}
+
+.culpa-kpi-alerta {
+    border-color: #ef4444;
+}
+
+.culpa-kpi-label {
+    color: #64748b;
+    font-size: 0.76rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.culpa-kpi-value {
+    font-size: clamp(1.6rem, 2.8vw, 2.2rem);
+    line-height: 1.1;
+    margin-top: 0.4rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.culpa-panel {
+    background: #ffffff;
+    border: 1px solid #dbe3ef;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    height: 100%;
+}
+
+.culpa-panel .h6 {
+    color: #1e3a8a;
+    letter-spacing: 0.06em;
+}
+
+.chart-slot {
+    min-height: 260px;
+}
+
+.chart-slot-wide {
+    min-height: 320px;
+}
+
+.culpa-ranking {
+    padding-left: 1.1rem;
+    color: #1f2937;
+}
+
+.culpa-ranking li {
+    margin-bottom: 0.55rem;
+}
+
+.culpa-ranking .culpa-ranking-tag {
+    color: #dc2626;
+    font-weight: 700;
+    margin-left: 0.45rem;
+}
+
+.culpa-insights {
+    list-style: none;
+    padding-left: 0;
+    color: #1e3a8a;
+}
+
+.culpa-insights li {
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 0.5rem;
+    padding: 0.65rem 0.75rem;
+    margin-bottom: 0.55rem;
+}
+
+.culpa-vazio {
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 991.98px) {
+    .estatisticas-page {
+        border-radius: 0;
+    }
+}

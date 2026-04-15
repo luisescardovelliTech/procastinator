@@ -164,16 +164,11 @@ body {
     font-size: 2rem;
 }
 
-.timer-side-card,
-.timer-note-card {
+.timer-side-card {
     background: #fff;
     border: 1px solid #e5e7eb;
     border-radius: 0.75rem;
     padding: 1rem;
-}
-
-.timer-warning-card {
-    border-left: 4px solid #dc3545;
 }
 
 .timer-ring {
@@ -192,23 +187,34 @@ body {
     height: 100%;
     border-radius: 50%;
     background: #f8f9fa;
-    display: grid;
-    place-items: center;
-    text-align: center;
+    position: relative;
 }
 
 .timer-phase-label {
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    transform: translateX(-50%);
     font-size: 0.78rem;
     text-transform: uppercase;
     letter-spacing: 0.12em;
     color: #6c757d;
     font-weight: 700;
+    white-space: nowrap;
+    text-align: center;
 }
 
 .timer-display {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     font-size: clamp(2.5rem, 6vw, 4rem);
     font-weight: 800;
     line-height: 1;
     color: #2b2f36;
+    min-width: 5ch;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
 }
 
