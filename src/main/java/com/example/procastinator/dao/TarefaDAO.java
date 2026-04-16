@@ -133,10 +133,10 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
         int pontos;
         String titulo;
         if (novo == StatusTarefa.ESPERANDO) {
-            pontos = 5;
+            pontos = -5;
             titulo = "Subiu para Esperando";
         } else if (novo == StatusTarefa.QUASE_FIZ) {
-            pontos = 10;
+            pontos = -10;
             titulo = "Chegou em Quase Fiz";
         } else {
             return;

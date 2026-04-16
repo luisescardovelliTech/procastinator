@@ -6,6 +6,7 @@ let avisosLista = [];
 let avisosCache = new Map();
 let filtroAtual = "";
 let editandoAvisoId = null;
+let editandoAvisoTipo = "XINGAMENTO";
 
 function escapeHtml(text) {
     return $("<div>").text(text || "").html();
@@ -124,8 +125,9 @@ function carregarAvisos() {
 
 function preencherModalAviso(aviso) {
     editandoAvisoId = aviso.id;
+    editandoAvisoTipo = (aviso.tipo || "XINGAMENTO").toUpperCase();
     $("#detalhe-aviso-mensagem").val(aviso.mensagem || "");
-    $("#detalhe-aviso-tipo").val(aviso.tipo || "XINGAMENTO");
+    $("#detalhe-aviso-tipo-label").text(editandoAvisoTipo);
 }
 
 function montarPayloadFormulario($mensagem, $tipo) {
@@ -183,10 +185,10 @@ $(function () {
             return;
         }
 
-        const payload = montarPayloadFormulario(
-            $("#detalhe-aviso-mensagem"),
-            $("#detalhe-aviso-tipo")
-        );
+        const payload = {
+            mensagem: $("#detalhe-aviso-mensagem").val().trim(),
+            tipo: editandoAvisoTipo
+        };
 
         if (!payload.mensagem) {
             showToast("Mensagem e obrigatoria.");

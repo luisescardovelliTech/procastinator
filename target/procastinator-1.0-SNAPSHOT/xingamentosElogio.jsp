@@ -102,16 +102,12 @@
             </div>
             <div class="modal-body d-flex flex-column gap-3">
                 <div>
-                    <label for="detalhe-aviso-mensagem" class="form-label small text-uppercase text-secondary">Mensagem</label>
-                    <textarea id="detalhe-aviso-mensagem" class="form-control" rows="4" maxlength="255" required></textarea>
+                    <div class="form-label small text-uppercase text-secondary mb-1">Tipo</div>
+                    <div id="detalhe-aviso-tipo-label" class="badge text-bg-dark">XINGAMENTO</div>
                 </div>
                 <div>
-                    <label for="detalhe-aviso-tipo" class="form-label small text-uppercase text-secondary">Tipo</label>
-                    <select id="detalhe-aviso-tipo" class="form-select form-select-sm">
-                        <option value="XINGAMENTO">Xingamento</option>
-                        <option value="ELOGIO">Elogio</option>
-                        <option value="ALERTA">Alerta</option>
-                    </select>
+                    <label for="detalhe-aviso-mensagem" class="form-label small text-uppercase text-secondary">Mensagem</label>
+                    <textarea id="detalhe-aviso-mensagem" class="form-control" rows="4" maxlength="255" required></textarea>
                 </div>
             </div>
             <div class="modal-footer">
