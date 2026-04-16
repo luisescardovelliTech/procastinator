@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Procrastinator | Quadro de Avisos</title>
+    <title>Procrastinator | Xingamentos e Elogio</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/procrastinator.css">
 </head>
@@ -13,10 +13,12 @@
     <div class="container-fluid">
         <span class="navbar-brand fw-bold">Procrastinator</span>
         <div class="navbar-nav ms-auto gap-lg-3 align-items-lg-center">
-            <a class="nav-link btn btn-link p-0 fw-bold border-bottom border-dark" href="${pageContext.request.contextPath}/quadro-avisos.jsp">Quadro de Avisos</a>
+            <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/estatisticas.jsp">Estatisticas de Culpa</a>
             <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/index.jsp">Lista do Nao Fazer</a>
             <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/timer.jsp">Timer de Descanso</a>
             <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/desculpas.jsp">Log de Desculpas</a>
+            <a class="nav-link btn btn-link p-0 fw-bold border-bottom border-dark" href="${pageContext.request.contextPath}/xingamentosElogio.jsp">Xingamentos e Elogio</a>
+            <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/recompensas.jsp">Recompensas</a>
         </div>
     </div>
 </nav>
@@ -26,11 +28,12 @@
         <aside class="col-12 col-lg-2 border-end bg-body-tertiary p-3">
             <h6 class="text-uppercase text-secondary small fw-bold mb-3">Painel</h6>
             <div class="list-group list-group-flush small">
-                <a class="list-group-item list-group-item-action bg-white fw-semibold rounded" href="${pageContext.request.contextPath}/quadro-avisos.jsp">Quadro de Avisos</a>
+                <a class="list-group-item list-group-item-action bg-transparent text-secondary" href="${pageContext.request.contextPath}/estatisticas.jsp">Estatisticas de Culpa</a>
                 <a class="list-group-item list-group-item-action bg-transparent text-secondary" href="${pageContext.request.contextPath}/index.jsp">Lista do Nao Fazer</a>
                 <a class="list-group-item list-group-item-action bg-transparent text-secondary" href="${pageContext.request.contextPath}/timer.jsp">Timer de Descanso</a>
                 <a class="list-group-item list-group-item-action bg-transparent text-secondary" href="${pageContext.request.contextPath}/desculpas.jsp">Log de Desculpas</a>
-                <span class="list-group-item bg-transparent text-secondary">Estatisticas de Culpa</span>
+                <a class="list-group-item list-group-item-action bg-white fw-semibold rounded" href="${pageContext.request.contextPath}/xingamentosElogio.jsp">Xingamentos e Elogio</a>
+                <a class="list-group-item list-group-item-action bg-transparent text-secondary" href="${pageContext.request.contextPath}/recompensas.jsp">Recompensas</a>
             </div>
             <div class="card mt-4 border-0 bg-transparent">
                 <div class="card-body p-0 small">
@@ -45,8 +48,8 @@
             <section class="avisos-hero mb-4">
                 <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
                     <div>
-                        <h1 class="h2 mb-2">Quadro de Avisos</h1>
-                        <p class="text-secondary mb-0">Cadastre avisos e conecte cada frase as tarefas que merecem um empurrao.</p>
+                        <h1 class="h2 mb-2">Xingamentos e Elogio</h1>
+                        <p class="text-secondary mb-0">Cadastre avisos com mensagem e tipo para usar no sistema.</p>
                     </div>
                     <div class="text-uppercase small text-secondary fw-semibold">Gerencia de Mensagens</div>
                 </div>
@@ -68,13 +71,7 @@
                                     <select id="aviso-tipo" class="form-select form-select-sm">
                                         <option value="XINGAMENTO">Xingamento</option>
                                         <option value="ELOGIO">Elogio</option>
-                                        <option value="ALERTA">Alerta</option>
                                     </select>
-                                </div>
-                                <div>
-                                    <label for="aviso-tarefas" class="form-label small text-uppercase text-secondary">Vincular tarefas</label>
-                                    <select id="aviso-tarefas" class="form-select" multiple size="6"></select>
-                                    <div class="form-text">Segure Ctrl para selecionar varias tarefas.</div>
                                 </div>
                                 <button type="submit" class="btn btn-dark">Salvar aviso</button>
                             </form>
@@ -85,7 +82,7 @@
                 <div class="col-12 col-xl-8">
                     <div class="d-flex justify-content-between align-items-center gap-2 mb-2 flex-wrap">
                         <h2 class="h6 text-uppercase text-secondary mb-0">Avisos cadastrados <span id="count-avisos" class="badge text-bg-light ms-1">0</span></h2>
-                        <input id="filtro-avisos" type="search" class="form-control form-control-sm aviso-filtro" placeholder="Filtrar por mensagem, tipo ou tarefa...">
+                        <input id="filtro-avisos" type="search" class="form-control form-control-sm aviso-filtro" placeholder="Filtrar por mensagem ou tipo...">
                     </div>
                     <div id="lista-avisos" class="d-flex flex-column gap-3"></div>
                 </div>
@@ -116,10 +113,6 @@
                         <option value="ALERTA">Alerta</option>
                     </select>
                 </div>
-                <div>
-                    <label for="detalhe-aviso-tarefas" class="form-label small text-uppercase text-secondary">Tarefas vinculadas</label>
-                    <select id="detalhe-aviso-tarefas" class="form-select" multiple size="6"></select>
-                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" id="btn-excluir-aviso" class="btn btn-outline-danger me-auto">Excluir</button>
@@ -135,7 +128,8 @@
 <script>
     const APP_CONTEXT = '${pageContext.request.contextPath}';
 </script>
-<script src="${pageContext.request.contextPath}/js/quadro-avisos.js?v=<%= System.currentTimeMillis() %>"></script>
+<script src="${pageContext.request.contextPath}/js/xingamentosElogio.js?v=<%= System.currentTimeMillis() %>"></script>
 </body>
 </html>
+
 

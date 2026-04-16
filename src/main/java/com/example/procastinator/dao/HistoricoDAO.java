@@ -2,7 +2,6 @@ package com.example.procastinator.dao;
 
 import com.example.procastinator.model.Historico;
 import com.example.procastinator.model.Tarefa;
-import com.example.procastinator.model.Usuario;
 import com.example.procastinator.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -16,7 +15,6 @@ public class HistoricoDAO {
             return session.createQuery(
                             "select h from Historico h " +
                                     "left join fetch h.tarefa " +
-                                    "left join fetch h.usuario " +
                                     "where h.acao = :acao " +
                                     "order by h.dataHora desc",
                             Historico.class)
@@ -33,7 +31,6 @@ public class HistoricoDAO {
             historico.setDataHora(LocalDateTime.now());
             historico.setComentario(comentario);
             historico.setNivelEficacia(normalizarEficacia(nivelEficacia));
-            historico.setUsuario(ensureDefaultUser(session));
             if (tarefaId != null) {
                 historico.setTarefa(session.find(Tarefa.class, tarefaId));
             }
@@ -85,7 +82,6 @@ public class HistoricoDAO {
         return session.createQuery(
                         "select h from Historico h " +
                                 "left join fetch h.tarefa " +
-                                "left join fetch h.usuario " +
                                 "where h.id = :id",
                         Historico.class)
                 .setParameter("id", id)
@@ -99,18 +95,6 @@ public class HistoricoDAO {
         return Math.max(0, Math.min(10, valor));
     }
 
-    private Usuario ensureDefaultUser(Session session) {
-        Usuario usuario = session.find(Usuario.class, 1);
-        if (usuario == null) {
-            usuario = new Usuario();
-            usuario.setNome("Setor de Inercia");
-            usuario.setEmail("inercia@procrastinator.local");
-            usuario.setSenha("123456");
-            session.persist(usuario);
-            session.flush();
-        }
-        return usuario;
-    }
 }
 
 

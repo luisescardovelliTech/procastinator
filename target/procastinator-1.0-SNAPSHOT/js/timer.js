@@ -1,5 +1,5 @@
 const TIMER_CONFIG = {
-    descansoSegundos: 25 * 60,
+    descansoSegundos: 10,
     produtividadeSegundos: 5 * 60
 };
 const API = {
