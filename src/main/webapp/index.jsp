@@ -13,15 +13,12 @@
     <div class="container-fluid">
         <span class="navbar-brand fw-bold">Procrastinator</span>
         <div class="navbar-nav ms-auto gap-lg-3 align-items-lg-center">
-            <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/quadro-avisos.jsp">Quadro de Avisos</a>
-            <a class="nav-link btn btn-link p-0 fw-bold border-bottom border-dark"
-               href="${pageContext.request.contextPath}/index.jsp">Lista do Nao Fazer</a>
-            <a class="nav-link btn btn-link p-0"
-               href="${pageContext.request.contextPath}/timer.jsp">Timer de Descanso</a>
-            <a class="nav-link btn btn-link p-0"
-               href="${pageContext.request.contextPath}/desculpas.jsp">Log de Desculpas</a>
-            <a class="nav-link btn btn-link p-0"
-               href="${pageContext.request.contextPath}/estatisticas.jsp">Estatisticas de Culpa</a>
+            <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/estatisticas.jsp">Estatisticas de Culpa</a>
+            <a class="nav-link btn btn-link p-0 fw-bold border-bottom border-dark" href="${pageContext.request.contextPath}/index.jsp">Lista do Nao Fazer</a>
+            <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/timer.jsp">Timer de Descanso</a>
+            <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/desculpas.jsp">Log de Desculpas</a>
+            <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/xingamentosElogio.jsp">Xingamentos e Elogio</a>
+            <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/recompensas.jsp">Recompensas</a>
         </div>
     </div>
 </nav>
@@ -31,15 +28,12 @@
         <aside class="col-12 col-lg-2 border-end bg-body-tertiary p-3">
             <h6 class="text-uppercase text-secondary small fw-bold mb-3">Painel</h6>
             <div class="list-group list-group-flush small">
-                <a class="list-group-item list-group-item-action bg-transparent text-secondary" href="${pageContext.request.contextPath}/quadro-avisos.jsp">Quadro de Avisos</a>
-                <a class="list-group-item list-group-item-action bg-white fw-semibold rounded"
-                   href="${pageContext.request.contextPath}/index.jsp">Lista do Nao Fazer</a>
-                <a class="list-group-item list-group-item-action bg-transparent text-secondary"
-                   href="${pageContext.request.contextPath}/timer.jsp">Timer de Descanso</a>
-                <a class="list-group-item list-group-item-action bg-transparent text-secondary"
-                   href="${pageContext.request.contextPath}/desculpas.jsp">Log de Desculpas</a>
-                <a class="list-group-item list-group-item-action bg-transparent text-secondary"
-                   href="${pageContext.request.contextPath}/estatisticas.jsp">Estatisticas de Culpa</a>
+                <a class="list-group-item list-group-item-action bg-transparent text-secondary" href="${pageContext.request.contextPath}/estatisticas.jsp">Estatisticas de Culpa</a>
+                <a class="list-group-item list-group-item-action bg-white fw-semibold rounded" href="${pageContext.request.contextPath}/index.jsp">Lista do Nao Fazer</a>
+                <a class="list-group-item list-group-item-action bg-transparent text-secondary" href="${pageContext.request.contextPath}/timer.jsp">Timer de Descanso</a>
+                <a class="list-group-item list-group-item-action bg-transparent text-secondary" href="${pageContext.request.contextPath}/desculpas.jsp">Log de Desculpas</a>
+                <a class="list-group-item list-group-item-action bg-transparent text-secondary" href="${pageContext.request.contextPath}/xingamentosElogio.jsp">Xingamentos e Elogio</a>
+                <a class="list-group-item list-group-item-action bg-transparent text-secondary" href="${pageContext.request.contextPath}/recompensas.jsp">Recompensas</a>
             </div>
             <div class="card mt-4 border-0 bg-transparent">
                 <div class="card-body p-0 small">
@@ -147,7 +141,70 @@
     </div>
 </div>
 
+<div class="modal fade" id="desculpasTarefaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5">Desculpas da Tarefa</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="small text-uppercase text-secondary mb-1">Tarefa</div>
+                <div id="desculpas-tarefa-titulo" class="fw-semibold mb-3"></div>
+                <div id="desculpas-tarefa-lista" class="d-flex flex-column gap-2"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="toast-status" class="toast-box">Log de registro detectado! Tarefa movida com sucesso.</div>
+
+<div class="modal fade" id="elogioModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white rounded-top-4">
+                <h5 class="modal-title fw-bold">
+                    Elogio Selecionado
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <p id="elogio-modal-mensagem" class="fs-5 fw-semibold text-dark mb-0">
+                </p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pb-4">
+                <button type="button" class="btn btn-dark px-4 rounded-pill" data-bs-dismiss="modal">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+<div class="modal fade" id="xingamentoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white rounded-top-4">
+                <h5 class="modal-title fw-bold">
+                    Xingamento Motivacional
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <p id="xingamento-modal-mensagem" class="fs-5 fw-semibold text-dark mb-0">
+                </p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pb-4">
+                <button type="button" class="btn btn-dark px-4 rounded-pill" data-bs-dismiss="modal">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

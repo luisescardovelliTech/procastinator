@@ -111,7 +111,6 @@ function filtrarDesculpas() {
         const alvo = [
             desculpa.comentario,
             desculpa.tarefaTitulo,
-            desculpa.usuarioNome,
             desculpa.tarefaId != null ? `tarefa #${desculpa.tarefaId}` : ""
         ].map(normalizarTexto).join(" ");
 

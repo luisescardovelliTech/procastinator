@@ -1,11 +1,11 @@
 const API = {
-    tarefas: `${APP_CONTEXT}/api/tarefas`
+    tarefas: `${APP_CONTEXT}/api/tarefas`,
+    recompensas: `${APP_CONTEXT}/api/recompensas`
 };
 
 const chartRefs = {
     status: null,
-    categorias: null,
-    tendencia: null
+    categorias: null
 };
 
 function showToast(message) {
@@ -14,10 +14,6 @@ function showToast(message) {
     setTimeout(function () {
         $toast.removeClass("show");
     }, 2300);
-}
-
-function escapeHtml(text) {
-    return $("<div>").text(text || "").html();
 }
 
 function traduzirStatus(status) {
@@ -55,8 +51,9 @@ function diasAtePrazo(dataIso) {
     return Math.floor(diffMs / 86400000);
 }
 
-function calcularMetricas(tarefas) {
+function calcularMetricas(tarefas, recompensas) {
     const listaTarefas = Array.isArray(tarefas) ? tarefas : [];
+    const listaRecompensas = Array.isArray(recompensas) ? recompensas : [];
 
     const pendentes = listaTarefas.filter(function (tarefa) {
         return tarefa.status !== "QUASE_FIZ";
@@ -67,15 +64,15 @@ function calcularMetricas(tarefas) {
         return dias != null && dias < 0 && tarefa.status !== "QUASE_FIZ";
     }).length;
 
-    const reincidencia = listaTarefas.length
-        ? Math.round((pendentes / listaTarefas.length) * 100)
-        : 0;
+    const scorePontos = listaRecompensas.reduce(function (total, item) {
+        return total + Number(item.pontos || 0);
+    }, 0);
 
     return {
         totalTarefas: listaTarefas.length,
         pendentes,
         totalDesculpas: atrasadas,
-        reincidencia
+        scorePontos
     };
 }
 
@@ -124,50 +121,32 @@ function agruparCategorias(tarefas) {
     };
 }
 
-function agruparTendencia(tarefas) {
-    const mapa = {};
-    (Array.isArray(tarefas) ? tarefas : []).forEach(function (item) {
-        const dataBase = item.dataPrazo ? String(item.dataPrazo).substring(0, 10) : "Sem prazo";
-        if (!dataBase) {
-            return;
-        }
-        mapa[dataBase] = (mapa[dataBase] || 0) + 1;
-    });
-
-    const dias = Object.keys(mapa).sort(function (a, b) {
-        if (a === "Sem prazo") {
-            return 1;
-        }
-        if (b === "Sem prazo") {
-            return -1;
-        }
-        return a.localeCompare(b);
-    });
-    const ultimos = dias.slice(-12);
-    return {
-        labels: ultimos,
-        valores: ultimos.map(function (dia) { return mapa[dia]; })
-    };
-}
-
-function calcularRankingReincidencia(tarefas) {
+function calcularRankingPrazos(tarefas) {
     return (Array.isArray(tarefas) ? tarefas : [])
         .map(function (tarefa) {
-            const dias = diasAtePrazo(tarefa.dataPrazo);
-            const atrasoPeso = dias != null && dias < 0 ? Math.abs(dias) : 0;
-            const statusPeso = tarefa.status === "BACKLOG" ? 3 : (tarefa.status === "ESPERANDO" ? 2 : 0);
-            const score = statusPeso + atrasoPeso;
+            const dataPrazo = parseDataIso(tarefa.dataPrazo);
             return {
                 titulo: tarefa.titulo || "Sem titulo",
-                total: score,
-                diasAtraso: atrasoPeso
+                status: tarefa.status || "BACKLOG",
+                dataPrazo,
+                prazoTexto: tarefa.dataPrazo ? String(tarefa.dataPrazo).substring(0, 10) : "Sem prazo",
+                diasRestantes: diasAtePrazo(tarefa.dataPrazo)
             };
         })
         .filter(function (item) {
-            return item.total > 0;
+            return item.status !== "QUASE_FIZ";
         })
         .sort(function (a, b) {
-            return b.total - a.total;
+            if (!a.dataPrazo && !b.dataPrazo) {
+                return a.titulo.localeCompare(b.titulo);
+            }
+            if (!a.dataPrazo) {
+                return 1;
+            }
+            if (!b.dataPrazo) {
+                return -1;
+            }
+            return a.dataPrazo - b.dataPrazo;
         })
         .slice(0, 5);
 }
@@ -176,7 +155,7 @@ function renderKpis(metricas) {
     $("#kpi-total-tarefas").text(metricas.totalTarefas);
     $("#kpi-pendentes").text(metricas.pendentes);
     $("#kpi-total-desculpas").text(metricas.totalDesculpas);
-    $("#kpi-reincidencia").text(`${metricas.reincidencia}%`);
+    $("#kpi-score-pontos").text(metricas.scorePontos);
 }
 
 function destroyChart(nome) {
@@ -249,109 +228,48 @@ function renderCategoriaChart(dataset) {
     });
 }
 
-function renderTendenciaChart(dataset) {
-    const ctx = document.getElementById("chart-tendencia");
-    if (!ctx || typeof Chart === "undefined") {
+function renderRankingPrazos(itens) {
+    const $ranking = $("#ranking-prazos");
+    if (!$ranking.length) {
         return;
     }
-
-    destroyChart("tendencia");
-    chartRefs.tendencia = new Chart(ctx, {
-        type: "line",
-        data: {
-            labels: dataset.labels,
-            datasets: [{
-                label: "Tarefas por prazo",
-                data: dataset.valores,
-                tension: 0.25,
-                borderWidth: 2,
-                borderColor: "#2563eb",
-                backgroundColor: "rgba(37, 99, 235, 0.15)",
-                fill: true
-            }]
-        },
-        options: {
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    labels: { color: "#334155" }
-                }
-            },
-            scales: {
-                x: { ticks: { color: "#334155" }, grid: { color: "#e2e8f0" } },
-                y: { ticks: { color: "#334155", precision: 0 }, grid: { color: "#e2e8f0" } }
-            }
-        }
-    });
-}
-
-function renderRanking(itens) {
-    const $ranking = $("#ranking-reincidencia");
     if (!itens.length) {
-        $ranking.html("<li class='culpa-vazio'>Sem registros suficientes.</li>");
+        $ranking.html("<li class='culpa-vazio'>Sem tarefas pendentes no momento.</li>");
         return;
     }
 
     const html = itens.map(function (item) {
-        const detalhe = item.diasAtraso > 0 ? ` (${item.diasAtraso}d atraso)` : "";
-        return `<li>${escapeHtml(item.titulo)} <span class="culpa-ranking-tag">score ${item.total}${detalhe}</span></li>`;
+        let detalhe;
+        if (item.diasRestantes == null) {
+            detalhe = "sem prazo";
+        } else if (item.diasRestantes < 0) {
+            detalhe = `${Math.abs(item.diasRestantes)}d atrasada`;
+        } else if (item.diasRestantes === 0) {
+            detalhe = "vence hoje";
+        } else {
+            detalhe = `vence em ${item.diasRestantes}d`;
+        }
+        return `<li>${item.titulo} <span class="culpa-ranking-tag">${item.prazoTexto} - ${detalhe}</span></li>`;
     });
+
     $ranking.html(html.join(""));
 }
 
-function gerarInsights(metricas, ranking, tendencia) {
-    const frases = [];
-    frases.push(`Pendencias abertas: ${metricas.pendentes} de ${metricas.totalTarefas} tarefas.`);
-    frases.push(`Tarefas atrasadas: ${metricas.totalDesculpas}.`);
-
-    if (ranking.length) {
-        frases.push(`Prioridade critica: "${ranking[0].titulo}" com score ${ranking[0].total}.`);
-    }
-
-    if (tendencia.valores.length >= 2) {
-        const atual = tendencia.valores[tendencia.valores.length - 1];
-        const anterior = tendencia.valores[tendencia.valores.length - 2];
-        if (atual > anterior) {
-            frases.push("A carga de tarefas por prazo aumentou no ultimo ponto analisado.");
-        } else if (atual < anterior) {
-            frases.push("A carga de tarefas por prazo caiu no ultimo ponto analisado.");
-        } else {
-            frases.push("A carga de tarefas por prazo ficou estavel no ultimo ponto analisado.");
-        }
-    }
-
-    if (!frases.length) {
-        frases.push("Adicione mais dados para gerar insights automaticos.");
-    }
-    return frases;
-}
-
-function renderInsights(insights) {
-    const html = insights.map(function (frase) {
-        return `<li>${escapeHtml(frase)}</li>`;
-    });
-    $("#insights-lista").html(html.join(""));
-}
-
 function carregarDashboard() {
-    return $.get(API.tarefas)
-        .done(function (tarefas) {
-            const listaTarefas = Array.isArray(tarefas) ? tarefas : [];
+    return $.when($.get(API.tarefas), $.get(API.recompensas))
+        .done(function (tarefasResp, recompensasResp) {
+            const listaTarefas = Array.isArray(tarefasResp[0]) ? tarefasResp[0] : [];
+            const listaRecompensas = Array.isArray(recompensasResp[0]) ? recompensasResp[0] : [];
 
-            const metricas = calcularMetricas(listaTarefas);
+            const metricas = calcularMetricas(listaTarefas, listaRecompensas);
             const statusData = agruparStatus(listaTarefas);
             const categoriaData = agruparCategorias(listaTarefas);
-            const tendenciaData = agruparTendencia(listaTarefas);
-            const ranking = calcularRankingReincidencia(listaTarefas);
-            const insights = gerarInsights(metricas, ranking, tendenciaData);
-
+            const rankingPrazos = calcularRankingPrazos(listaTarefas);
 
             renderKpis(metricas);
             renderStatusChart(statusData);
             renderCategoriaChart(categoriaData);
-            renderTendenciaChart(tendenciaData);
-            renderRanking(ranking);
-            renderInsights(insights);
+            renderRankingPrazos(rankingPrazos);
         })
         .fail(function () {
             showToast("Falha ao carregar dados da lista de tarefas.");

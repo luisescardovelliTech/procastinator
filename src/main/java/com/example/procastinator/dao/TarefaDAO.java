@@ -2,9 +2,9 @@ package com.example.procastinator.dao;
 
 import com.example.procastinator.model.Categoria;
 import com.example.procastinator.model.Historico;
+import com.example.procastinator.model.Recompensa;
 import com.example.procastinator.model.StatusTarefa;
 import com.example.procastinator.model.Tarefa;
-import com.example.procastinator.model.Usuario;
 import com.example.procastinator.model.Xingamento;
 import com.example.procastinator.util.HibernateUtil;
 import org.hibernate.Session;
@@ -21,11 +21,6 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
     public void salvar(Tarefa obj) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             Transaction tx = session.beginTransaction();
-            if (obj.getUsuario() == null || obj.getUsuario().getId() == null) {
-                obj.setUsuario(ensureDefaultUser(session));
-            } else {
-                obj.setUsuario(session.get(Usuario.class, obj.getUsuario().getId()));
-            }
             obj.setCategoria(resolveCategoria(session, obj.getCategoria()));
             List<Xingamento> xingamentos = resolveXingamentos(session, obj.getXingamentos());
             if (xingamentos.isEmpty()) {
@@ -33,7 +28,7 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
             }
             obj.setXingamentos(xingamentos);
             session.persist(obj);
-            registrarHistorico(session, obj.getUsuario(), obj, "CRIACAO");
+            registrarHistorico(session, obj, "CRIACAO");
             tx.commit();
         }
     }
@@ -66,8 +61,9 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
     public void atualizar(Tarefa obj) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             Transaction tx = session.beginTransaction();
-            Tarefa atual = session.get(Tarefa.class, obj.getId());
+            Tarefa atual = session.find(Tarefa.class, obj.getId());
             if (atual != null) {
+                StatusTarefa statusAnterior = atual.getStatus();
                 if (obj.getTitulo() != null) {
                     atual.setTitulo(obj.getTitulo());
                 }
@@ -87,7 +83,8 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
                     atual.setXingamentos(resolveXingamentos(session, obj.getXingamentos()));
                 }
                 session.merge(atual);
-                registrarHistorico(session, atual.getUsuario(), atual, "ATUALIZACAO");
+                registrarHistorico(session, atual, "ATUALIZACAO");
+                registrarRecompensaPorStatus(session, atual, statusAnterior, atual.getStatus());
             }
             tx.commit();
         }
@@ -97,7 +94,7 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
     public void deletar(Integer id) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             Transaction tx = session.beginTransaction();
-            Tarefa tarefa = session.get(Tarefa.class, id);
+            Tarefa tarefa = session.find(Tarefa.class, id);
             if (tarefa != null) {
                 session.createMutationQuery(
                                 "update Historico h set h.tarefa = null where h.tarefa.id = :id")
@@ -106,7 +103,7 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
                 session.createNativeQuery("delete from tarefa_xingamento where id_tarefa = :id")
                         .setParameter("id", id)
                         .executeUpdate();
-                registrarHistorico(session, tarefa.getUsuario(), null, "EXCLUSAO");
+                registrarHistorico(session, null, "EXCLUSAO");
                 session.remove(tarefa);
             }
             tx.commit();
@@ -116,27 +113,42 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
     public void atualizarStatus(Integer id, StatusTarefa status) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             Transaction tx = session.beginTransaction();
-            Tarefa tarefa = session.get(Tarefa.class, id);
+            Tarefa tarefa = session.find(Tarefa.class, id);
             if (tarefa != null) {
+                StatusTarefa statusAnterior = tarefa.getStatus();
                 tarefa.setStatus(status);
                 session.merge(tarefa);
-                registrarHistorico(session, tarefa.getUsuario(), tarefa, "STATUS");
+                registrarHistorico(session, tarefa, "STATUS");
+                registrarRecompensaPorStatus(session, tarefa, statusAnterior, status);
             }
             tx.commit();
         }
     }
 
-    private Usuario ensureDefaultUser(Session session) {
-        Usuario usuario = session.get(Usuario.class, 1);
-        if (usuario == null) {
-            usuario = new Usuario();
-            usuario.setNome("Setor de Inercia");
-            usuario.setEmail("inercia@procrastinator.local");
-            usuario.setSenha("123456");
-            session.persist(usuario);
-            session.flush();
+    private void registrarRecompensaPorStatus(Session session, Tarefa tarefa, StatusTarefa anterior, StatusTarefa novo) {
+        if (tarefa == null || novo == null || novo == anterior) {
+            return;
         }
-        return usuario;
+
+        int pontos;
+        String titulo;
+        if (novo == StatusTarefa.ESPERANDO) {
+            pontos = 5;
+            titulo = "Subiu para Esperando";
+        } else if (novo == StatusTarefa.QUASE_FIZ) {
+            pontos = 10;
+            titulo = "Chegou em Quase Fiz";
+        } else {
+            return;
+        }
+
+        Recompensa recompensa = new Recompensa();
+        recompensa.setTitulo(titulo);
+        recompensa.setDescricao("Movimentacao da tarefa: " + (tarefa.getTitulo() == null ? "Sem titulo" : tarefa.getTitulo()));
+        recompensa.setPontos(pontos);
+        recompensa.setDataConquista(LocalDateTime.now());
+        recompensa.setTarefa(tarefa);
+        session.persist(recompensa);
     }
 
     private Categoria resolveCategoria(Session session, Categoria categoria) {
@@ -144,7 +156,7 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
             return ensureDefaultCategoria(session);
         }
         if (categoria.getId() != null) {
-            Categoria persistent = session.get(Categoria.class, categoria.getId());
+            Categoria persistent = session.find(Categoria.class, categoria.getId());
             if (persistent != null) {
                 return persistent;
             }
@@ -166,7 +178,7 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
     }
 
     private Categoria ensureDefaultCategoria(Session session) {
-        Categoria categoria = session.get(Categoria.class, 1);
+        Categoria categoria = session.find(Categoria.class, 1);
         if (categoria == null) {
             categoria = new Categoria();
             categoria.setNome("GERAL");
@@ -184,7 +196,7 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
         for (Xingamento xingamento : xingamentos) {
             Xingamento persistent = null;
             if (xingamento.getId() != null) {
-                persistent = session.get(Xingamento.class, xingamento.getId());
+                persistent = session.find(Xingamento.class, xingamento.getId());
             }
             if (persistent == null && xingamento.getMensagem() != null && !xingamento.getMensagem().isBlank()) {
                 persistent = session.createQuery(
@@ -219,11 +231,10 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
         return padrao.isEmpty() ? cadastrados : padrao;
     }
 
-    private void registrarHistorico(Session session, Usuario usuario, Tarefa tarefa, String acao) {
+    private void registrarHistorico(Session session, Tarefa tarefa, String acao) {
         Historico historico = new Historico();
         historico.setAcao(acao);
         historico.setDataHora(LocalDateTime.now());
-        historico.setUsuario(usuario);
         historico.setTarefa(tarefa);
         session.persist(historico);
     }

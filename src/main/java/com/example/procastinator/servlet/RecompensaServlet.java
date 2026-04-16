@@ -1,7 +1,7 @@
 package com.example.procastinator.servlet;
 
-import com.example.procastinator.dao.XingamentoDAO;
-import com.example.procastinator.model.Xingamento;
+import com.example.procastinator.dao.RecompensaDAO;
+import com.example.procastinator.model.Recompensa;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -13,9 +13,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 
-@WebServlet("/api/avisos/*")
-public class AvisoServlet extends HttpServlet {
-    private final XingamentoDAO dao = new XingamentoDAO();
+@WebServlet("/api/recompensas/*")
+public class RecompensaServlet extends HttpServlet {
+    private final RecompensaDAO dao = new RecompensaDAO();
     private final Gson gson = new Gson();
 
     @Override
@@ -24,17 +24,17 @@ public class AvisoServlet extends HttpServlet {
 
         Integer id = extrairId(req);
         if (id != null) {
-            Xingamento aviso = dao.buscarPorId(id);
-            if (aviso == null) {
-                escreverErroTexto(resp, HttpServletResponse.SC_NOT_FOUND, "Aviso nao encontrado.");
+            Recompensa recompensa = dao.buscarPorId(id);
+            if (recompensa == null) {
+                resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Recompensa nao encontrada.");
                 return;
             }
-            resp.getWriter().write(gson.toJson(AvisoResponse.from(aviso)));
+            resp.getWriter().write(gson.toJson(RecompensaResponse.from(recompensa)));
             return;
         }
 
-        List<AvisoResponse> payload = dao.listarTodos().stream()
-                .map(AvisoResponse::from)
+        List<RecompensaResponse> payload = dao.listarTodos().stream()
+                .map(RecompensaResponse::from)
                 .toList();
         resp.getWriter().write(gson.toJson(payload));
     }
@@ -42,61 +42,61 @@ public class AvisoServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         JsonObject body = JsonParser.parseReader(req.getReader()).getAsJsonObject();
-        String mensagem = getTextoObrigatorio(body, resp);
-        if (mensagem == null) {
+        String titulo = getTextoObrigatorio(body, resp);
+        if (titulo == null) {
             return;
         }
 
-        String tipo = getTexto(body, "tipo", "XINGAMENTO");
-        Xingamento salvo = dao.salvarAviso(mensagem, tipo);
+        Recompensa salva = dao.salvar(
+                titulo,
+                getTexto(body, "descricao", "")
+        );
 
         resp.setStatus(HttpServletResponse.SC_CREATED);
         resp.setContentType("application/json; charset=UTF-8");
-        resp.getWriter().write(gson.toJson(AvisoResponse.from(salvo)));
+        resp.getWriter().write(gson.toJson(RecompensaResponse.from(salva)));
     }
 
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Integer id = extrairId(req);
         if (id == null) {
-            escreverErroTexto(resp, HttpServletResponse.SC_BAD_REQUEST, "Id do aviso invalido.");
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Id da recompensa invalido.");
             return;
         }
 
         JsonObject body = JsonParser.parseReader(req.getReader()).getAsJsonObject();
-        String mensagem = getTextoObrigatorio(body, resp);
-        if (mensagem == null) {
+        String titulo = getTextoObrigatorio(body, resp);
+        if (titulo == null) {
             return;
         }
 
-        String tipo = getTexto(body, "tipo", "XINGAMENTO");
-        Xingamento atualizado = dao.atualizarAviso(id, mensagem, tipo);
+        Recompensa atualizada = dao.atualizar(
+                id,
+                titulo,
+                getTexto(body, "descricao", "")
+        );
 
-        if (atualizado == null) {
-            escreverErroTexto(resp, HttpServletResponse.SC_NOT_FOUND, "Aviso nao encontrado.");
+        if (atualizada == null) {
+            resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Recompensa nao encontrada.");
             return;
         }
 
         resp.setContentType("application/json; charset=UTF-8");
-        resp.getWriter().write(gson.toJson(AvisoResponse.from(atualizado)));
+        resp.getWriter().write(gson.toJson(RecompensaResponse.from(atualizada)));
     }
 
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Integer id = extrairId(req);
         if (id == null) {
-            escreverErroTexto(resp, HttpServletResponse.SC_BAD_REQUEST, "Id do aviso invalido.");
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Id da recompensa invalido.");
             return;
         }
 
-        XingamentoDAO.ExclusaoAvisoResultado resultado = dao.excluirAviso(id);
-        if (resultado == XingamentoDAO.ExclusaoAvisoResultado.NAO_ENCONTRADO) {
-            escreverErroTexto(resp, HttpServletResponse.SC_NOT_FOUND, "Aviso nao encontrado.");
-            return;
-        }
-        if (resultado == XingamentoDAO.ExclusaoAvisoResultado.VINCULADO_A_TAREFA) {
-            escreverErroTexto(resp, HttpServletResponse.SC_CONFLICT,
-                    "Nao e possivel excluir: este xingamento/elogio esta vinculado a uma tarefa.");
+        boolean removido = dao.excluir(id);
+        if (!removido) {
+            resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Recompensa nao encontrada.");
             return;
         }
 
@@ -104,18 +104,12 @@ public class AvisoServlet extends HttpServlet {
     }
 
     private String getTextoObrigatorio(JsonObject body, HttpServletResponse resp) throws IOException {
-        String mensagem = getTexto(body, "mensagem", "");
-        if (mensagem.isBlank()) {
-            escreverErroTexto(resp, HttpServletResponse.SC_BAD_REQUEST, "Mensagem do aviso e obrigatoria.");
+        String titulo = getTexto(body, "titulo", "");
+        if (titulo.isBlank()) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Titulo da recompensa e obrigatorio.");
             return null;
         }
-        return mensagem;
-    }
-
-    private void escreverErroTexto(HttpServletResponse resp, int status, String mensagem) throws IOException {
-        resp.setStatus(status);
-        resp.setContentType("text/plain; charset=UTF-8");
-        resp.getWriter().write(mensagem);
+        return titulo;
     }
 
     private String getTexto(JsonObject body, String campo, String valorPadrao) {
@@ -143,18 +137,27 @@ public class AvisoServlet extends HttpServlet {
         }
     }
 
-    private record AvisoResponse(
+    private record RecompensaResponse(
             Integer id,
-            String mensagem,
-            String tipo
+            String titulo,
+            String descricao,
+            Integer pontos,
+            String dataConquista,
+            Integer tarefaId,
+            String tarefaTitulo
     ) {
-        static AvisoResponse from(Xingamento aviso) {
-            return new AvisoResponse(
-                    aviso.getId(),
-                    aviso.getMensagem(),
-                    aviso.getTipo()
+        static RecompensaResponse from(Recompensa recompensa) {
+            return new RecompensaResponse(
+                    recompensa.getId(),
+                    recompensa.getTitulo(),
+                    recompensa.getDescricao(),
+                    recompensa.getPontos(),
+                    recompensa.getDataConquista() != null ? recompensa.getDataConquista().toString() : null,
+                    recompensa.getTarefa() != null ? recompensa.getTarefa().getId() : null,
+                    recompensa.getTarefa() != null ? recompensa.getTarefa().getTitulo() : "Sem tarefa associada"
             );
         }
     }
 }
+
 

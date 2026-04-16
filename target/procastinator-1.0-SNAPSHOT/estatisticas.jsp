@@ -14,11 +14,12 @@
     <div class="container-fluid">
         <span class="navbar-brand fw-bold">Procrastinator</span>
         <div class="navbar-nav ms-auto gap-lg-3 align-items-lg-center">
-            <span class="nav-link">Quadro de Avisos</span>
+            <a class="nav-link btn btn-link p-0 fw-bold border-bottom border-dark" href="${pageContext.request.contextPath}/estatisticas.jsp">Estatisticas de Culpa</a>
             <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/index.jsp">Lista do Nao Fazer</a>
             <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/timer.jsp">Timer de Descanso</a>
             <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/desculpas.jsp">Log de Desculpas</a>
-            <a class="nav-link btn btn-link p-0 fw-bold border-bottom border-dark" href="${pageContext.request.contextPath}/estatisticas.jsp">Estatisticas de Culpa</a>
+            <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/xingamentosElogio.jsp">Xingamentos e Elogio</a>
+            <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/recompensas.jsp">Recompensas</a>
         </div>
     </div>
 </nav>
@@ -28,11 +29,12 @@
         <aside class="col-12 col-lg-2 border-end bg-body-tertiary p-3">
             <h6 class="text-uppercase text-secondary small fw-bold mb-3">Painel</h6>
             <div class="list-group list-group-flush small">
-                <span class="list-group-item bg-transparent text-secondary">Quadro de Avisos</span>
+                <a class="list-group-item list-group-item-action bg-white fw-semibold rounded" href="${pageContext.request.contextPath}/estatisticas.jsp">Estatisticas de Culpa</a>
                 <a class="list-group-item list-group-item-action bg-transparent text-secondary" href="${pageContext.request.contextPath}/index.jsp">Lista do Nao Fazer</a>
                 <a class="list-group-item list-group-item-action bg-transparent text-secondary" href="${pageContext.request.contextPath}/timer.jsp">Timer de Descanso</a>
                 <a class="list-group-item list-group-item-action bg-transparent text-secondary" href="${pageContext.request.contextPath}/desculpas.jsp">Log de Desculpas</a>
-                <a class="list-group-item list-group-item-action bg-white fw-semibold rounded" href="${pageContext.request.contextPath}/estatisticas.jsp">Estatisticas de Culpa</a>
+                <a class="list-group-item list-group-item-action bg-transparent text-secondary" href="${pageContext.request.contextPath}/xingamentosElogio.jsp">Xingamentos e Elogio</a>
+                <a class="list-group-item list-group-item-action bg-transparent text-secondary" href="${pageContext.request.contextPath}/recompensas.jsp">Recompensas</a>
             </div>
             <div class="card mt-4 border-0 bg-transparent">
                 <div class="card-body p-0 small">
@@ -68,15 +70,15 @@
                     </article>
                 </div>
                 <div class="col-12 col-md-6 col-xl-3">
-                    <article class="culpa-kpi-card culpa-kpi-alerta">
+                    <article class="culpa-kpi-card ">
                         <div class="culpa-kpi-label">Tarefas atrasadas</div>
                         <div id="kpi-total-desculpas" class="culpa-kpi-value">0</div>
                     </article>
                 </div>
                 <div class="col-12 col-md-6 col-xl-3">
                     <article class="culpa-kpi-card">
-                        <div class="culpa-kpi-label">Taxa de reincidencia</div>
-                        <div id="kpi-reincidencia" class="culpa-kpi-value">0%</div>
+                        <div class="culpa-kpi-label">Score de pontos</div>
+                        <div id="kpi-score-pontos" class="culpa-kpi-value">0</div>
                     </article>
                 </div>
             </section>
@@ -100,24 +102,11 @@
                 </div>
                 <div class="col-12">
                     <article class="culpa-panel">
-                        <h2 class="h6 text-uppercase mb-3">Evolucao de tarefas por prazo</h2>
-                        <div class="chart-slot chart-slot-wide">
-                            <canvas id="chart-tendencia" aria-label="Grafico de tendencia de tarefas por prazo"></canvas>
-                        </div>
+                        <h2 class="h6 text-uppercase mb-3">Ranking de tarefas para fazer</h2>
+                        <ol id="ranking-prazos" class="culpa-ranking mb-0"></ol>
                     </article>
                 </div>
-                <div class="col-12 col-xl-6">
-                    <article class="culpa-panel">
-                        <h2 class="h6 text-uppercase mb-3">Top 5 tarefas criticas</h2>
-                        <ol id="ranking-reincidencia" class="culpa-ranking mb-0"></ol>
-                    </article>
-                </div>
-                <div class="col-12 col-xl-6">
-                    <article class="culpa-panel">
-                        <h2 class="h6 text-uppercase mb-3">Insights automaticos</h2>
-                        <ul id="insights-lista" class="culpa-insights mb-0"></ul>
-                    </article>
-                </div>
+
             </section>
         </main>
     </div>

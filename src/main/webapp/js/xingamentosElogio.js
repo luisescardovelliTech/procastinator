@@ -219,7 +219,14 @@ $(function () {
                 carregarAvisos();
                 showToast("Frase excluida com sucesso.");
             })
-            .fail((xhr) => showToast(extrairMensagemErro(xhr, "Erro ao excluir frase.")));
+            .fail((xhr) => {
+                const mensagemErro = extrairMensagemErro(xhr, "Erro ao excluir frase.");
+                if (xhr && xhr.status === 409) {
+                    window.alert(mensagemErro);
+                    return;
+                }
+                showToast(mensagemErro);
+            });
     });
 });
 

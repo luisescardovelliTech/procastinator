@@ -13,11 +13,13 @@
     <div class="container-fluid">
         <span class="navbar-brand fw-bold">Procrastinator</span>
         <div class="navbar-nav ms-auto gap-lg-3 align-items-lg-center">
-            <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/quadro-avisos.jsp">Xingamentos e Elogios</a>
+            <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/estatisticas.jsp">Estatisticas de Culpa</a>
             <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/index.jsp">Lista do Nao Fazer</a>
             <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/timer.jsp">Timer de Descanso</a>
             <a class="nav-link btn btn-link p-0 fw-bold border-bottom border-dark" href="${pageContext.request.contextPath}/desculpas.jsp">Log de Desculpas</a>
-            <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/estatisticas.jsp">Estatisticas de Culpa</a>
+            <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/xingamentosElogio.jsp">Xingamentos e Elogio</a>
+            <a class="nav-link btn btn-link p-0" href="${pageContext.request.contextPath}/recompensas.jsp">Recompensas</a>
+
         </div>
     </div>
 </nav>
@@ -27,13 +29,12 @@
         <aside class="col-12 col-lg-2 border-end bg-body-tertiary p-3">
             <h6 class="text-uppercase text-secondary small fw-bold mb-3">Painel</h6>
             <div class="list-group list-group-flush small">
-                <a class="list-group-item list-group-item-action bg-transparent text-secondary" href="${pageContext.request.contextPath}/quadro-avisos.jsp">Xingamentos e Elogios</a>
+                <a class="list-group-item list-group-item-action bg-transparent text-secondary" href="${pageContext.request.contextPath}/estatisticas.jsp">Estatisticas de Culpa</a>
                 <a class="list-group-item list-group-item-action bg-transparent text-secondary" href="${pageContext.request.contextPath}/index.jsp">Lista do Nao Fazer</a>
-                <a class="list-group-item list-group-item-action bg-transparent text-secondary"
-                   href="${pageContext.request.contextPath}/timer.jsp">Timer de Descanso</a>
+                <a class="list-group-item list-group-item-action bg-transparent text-secondary" href="${pageContext.request.contextPath}/timer.jsp">Timer de Descanso</a>
                 <a class="list-group-item list-group-item-action bg-white fw-semibold rounded" href="${pageContext.request.contextPath}/desculpas.jsp">Log de Desculpas</a>
-                <a class="list-group-item list-group-item-action bg-transparent text-secondary"
-                   href="${pageContext.request.contextPath}/estatisticas.jsp">Estatisticas de Culpa</a>
+                <a class="list-group-item list-group-item-action bg-transparent text-secondary" href="${pageContext.request.contextPath}/xingamentosElogio.jsp">Xingamentos e Elogio</a>
+                <a class="list-group-item list-group-item-action bg-transparent text-secondary" href="${pageContext.request.contextPath}/recompensas.jsp">Recompensas</a>
             </div>
             <div class="card mt-4 border-0 bg-transparent">
                 <div class="card-body p-0 small">

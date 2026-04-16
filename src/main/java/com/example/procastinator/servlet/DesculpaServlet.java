@@ -124,8 +124,7 @@ public class DesculpaServlet extends HttpServlet {
 			String comentario,
 			Integer nivelEficacia,
 			Integer tarefaId,
-			String tarefaTitulo,
-			String usuarioNome
+			String tarefaTitulo
 	) {
 		static DesculpaResponse from(Historico historico) {
 			return new DesculpaResponse(
@@ -134,8 +133,7 @@ public class DesculpaServlet extends HttpServlet {
 					historico.getComentario(),
 					historico.getNivelEficacia(),
 					historico.getTarefa() != null ? historico.getTarefa().getId() : null,
-					historico.getTarefa() != null ? historico.getTarefa().getTitulo() : "Sem tarefa associada",
-					historico.getUsuario() != null ? historico.getUsuario().getNome() : "Setor de Inercia"
+					historico.getTarefa() != null ? historico.getTarefa().getTitulo() : "Sem tarefa associada"
 			);
 		}
 	}
