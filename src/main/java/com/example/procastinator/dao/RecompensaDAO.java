@@ -132,7 +132,8 @@ public class RecompensaDAO {
         int bonusTitulo = Math.min(5, Math.max(0, titulo.length() / 12));
         int bonusDescricao = Math.min(7, Math.max(0, descricao.length() / 30));
         int total = pontosBase + bonusTitulo + bonusDescricao;
-        return Math.max(3, Math.min(50, total));
+        int limitado = Math.min(50, total);
+        return -limitado;
     }
 }
 

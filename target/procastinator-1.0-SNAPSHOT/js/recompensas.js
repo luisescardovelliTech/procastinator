@@ -73,12 +73,14 @@ function filtrarRecompensas() {
 }
 
 function buildRecompensaCard(recompensa) {
+    const pontos = Number(recompensa.pontos || 0);
+    const classePontos = pontos < 0 ? "text-bg-danger" : "text-bg-success";
     return `
         <article class="aviso-card" data-id="${recompensa.id}">
             <header class="d-flex justify-content-between align-items-start gap-3 mb-2">
                 <div class="d-flex align-items-center gap-2 flex-wrap">
                     <span class="aviso-badge">RECOMPENSA #${escapeHtml(recompensa.id)}</span>
-                    <span class="badge text-bg-success">+${escapeHtml(recompensa.pontos || 0)} pts</span>
+                    <span class="badge ${classePontos}">${escapeHtml(pontos)} pts</span>
                 </div>
                 <span class="small text-secondary">${escapeHtml(formatarDataHora(recompensa.dataConquista))}</span>
             </header>
