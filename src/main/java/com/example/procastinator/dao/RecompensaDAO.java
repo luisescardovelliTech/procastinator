@@ -29,6 +29,22 @@ public class RecompensaDAO {
         }
     }
 
+    public List<Recompensa> listarMudancasDeColunaDaTarefa(Integer tarefaId) {
+        if (tarefaId == null) {
+            return List.of();
+        }
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery(
+                            "select r from com.example.procastinator.model.Recompensa r " +
+                                    "where r.tarefa.id = :tarefaId " +
+                                    "and (r.titulo like 'Subiu para %' or r.titulo like 'Chegou em %') " +
+                                    "order by r.dataConquista asc, r.id asc",
+                            Recompensa.class)
+                    .setParameter("tarefaId", tarefaId)
+                    .list();
+        }
+    }
+
     public Recompensa salvar(String titulo, String descricao) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             Transaction tx = session.beginTransaction();

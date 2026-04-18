@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 @WebServlet("/api/recompensas/*")
@@ -21,6 +22,42 @@ public class RecompensaServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         resp.setContentType("application/json; charset=UTF-8");
+
+        List<String> segmentos = extrairSegmentos(req);
+        if (segmentos.size() == 2 && "detalhes".equalsIgnoreCase(segmentos.get(1))) {
+            Integer recompensaId = parseInteger(segmentos.get(0));
+            if (recompensaId == null) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Id da recompensa invalido.");
+                return;
+            }
+
+            Recompensa recompensa = dao.buscarPorId(recompensaId);
+            if (recompensa == null) {
+                resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Recompensa nao encontrada.");
+                return;
+            }
+
+            Integer tarefaId = recompensa.getTarefa() != null ? recompensa.getTarefa().getId() : null;
+            List<MudancaColunaResponse> mudancas = dao.listarMudancasDeColunaDaTarefa(tarefaId).stream()
+                    .map(item -> new MudancaColunaResponse(
+                            normalizarDestino(item.getTitulo()),
+                            item.getDataConquista() != null ? item.getDataConquista().toString() : null
+                    ))
+                    .toList();
+
+            RecompensaDetalheResponse payload = new RecompensaDetalheResponse(
+                    recompensa.getId(),
+                    tarefaId,
+                    recompensa.getTarefa() != null ? recompensa.getTarefa().getTitulo() : "Sem tarefa associada",
+                    recompensa.getTarefa() != null ? recompensa.getTarefa().getDescricao() : "",
+                    recompensa.getTarefa() != null && recompensa.getTarefa().getDataCriacao() != null
+                            ? recompensa.getTarefa().getDataCriacao().toString()
+                            : null,
+                    mudancas
+            );
+            resp.getWriter().write(gson.toJson(payload));
+            return;
+        }
 
         Integer id = extrairId(req);
         if (id != null) {
@@ -137,6 +174,37 @@ public class RecompensaServlet extends HttpServlet {
         }
     }
 
+    private List<String> extrairSegmentos(HttpServletRequest req) {
+        String pathInfo = req.getPathInfo();
+        if (pathInfo == null || pathInfo.isBlank() || "/".equals(pathInfo)) {
+            return List.of();
+        }
+        return Arrays.stream(pathInfo.split("/"))
+                .filter(parte -> parte != null && !parte.isBlank())
+                .toList();
+    }
+
+    private Integer parseInteger(String valor) {
+        try {
+            return Integer.parseInt(valor);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private String normalizarDestino(String tituloEvento) {
+        if (tituloEvento == null || tituloEvento.isBlank()) {
+            return "Mudanca de coluna";
+        }
+        if (tituloEvento.startsWith("Subiu para ")) {
+            return tituloEvento.substring("Subiu para ".length());
+        }
+        if (tituloEvento.startsWith("Chegou em ")) {
+            return tituloEvento.substring("Chegou em ".length());
+        }
+        return tituloEvento;
+    }
+
     private record RecompensaResponse(
             Integer id,
             String titulo,
@@ -157,6 +225,22 @@ public class RecompensaServlet extends HttpServlet {
                     recompensa.getTarefa() != null ? recompensa.getTarefa().getTitulo() : "Sem tarefa associada"
             );
         }
+    }
+
+    private record RecompensaDetalheResponse(
+            Integer recompensaId,
+            Integer tarefaId,
+            String tarefaTitulo,
+            String tarefaDescricao,
+            String dataCriacaoTarefa,
+            List<MudancaColunaResponse> mudancasColuna
+    ) {
+    }
+
+    private record MudancaColunaResponse(
+            String coluna,
+            String dataHora
+    ) {
     }
 }
 

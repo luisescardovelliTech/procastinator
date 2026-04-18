@@ -53,7 +53,7 @@
                     </div>
                     <div class="d-flex flex-column align-items-end gap-1">
                         <div class="text-uppercase small text-secondary fw-semibold">Gestao de Recompensas</div>
-                        <div class="badge text-bg-success fs-6 px-3 py-2">Total de pontos: <span id="total-pontos">0</span></div>
+                        <div class="badge text-bg-danger fs-6 px-3 py-2">Total de pontos: <span id="total-pontos">0</span></div>
                     </div>
                 </div>
             </section>
@@ -68,6 +68,26 @@
                 </div>
             </div>
         </main>
+    </div>
+</div>
+
+<div class="modal fade" id="recompensaDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalhes da Tarefa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-2"><strong>Titulo:</strong> <span id="detalhe-tarefa-titulo">-</span></div>
+                <div class="mb-3"><strong>Descricao:</strong> <span id="detalhe-tarefa-descricao">-</span></div>
+                <div class="mb-3"><strong>Criada em:</strong> <span id="detalhe-tarefa-criacao">-</span></div>
+                <div>
+                    <strong>Mudancas de coluna:</strong>
+                    <ul id="detalhe-tarefa-mudancas" class="mt-2 mb-0 ps-3 small"></ul>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

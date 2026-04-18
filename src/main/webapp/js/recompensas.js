@@ -40,6 +40,21 @@ function formatarDataHora(dataHora) {
     });
 }
 
+function formatarData(dataTexto) {
+    if (!dataTexto) {
+        return "-";
+    }
+    const data = new Date(dataTexto);
+    if (Number.isNaN(data.getTime())) {
+        return dataTexto;
+    }
+    return data.toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+    });
+}
+
 function atualizarContadorRegistros(quantidadeVisivel, quantidadeTotal) {
     const texto = quantidadeVisivel === quantidadeTotal
         ? `${quantidadeTotal}`
@@ -86,7 +101,31 @@ function buildRecompensaCard(recompensa) {
             </header>
             <h3 class="h6 mb-1">${escapeHtml(recompensa.titulo || "Sem titulo")}</h3>
             <p class="mb-2">${escapeHtml(recompensa.descricao || "")}</p>
+            <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-sm btn-outline-dark btn-detalhes-recompensa">Detalhes</button>
+            </div>
         </article>`;
+}
+
+function carregarDetalhesRecompensa(id) {
+    return $.get(`${API.recompensas}/${id}/detalhes`);
+}
+
+function preencherModalDetalhes(detalhes) {
+    $("#detalhe-tarefa-titulo").text(detalhes.tarefaTitulo || "Sem tarefa associada");
+    $("#detalhe-tarefa-descricao").text(detalhes.tarefaDescricao || "-");
+    $("#detalhe-tarefa-criacao").text(formatarData(detalhes.dataCriacaoTarefa));
+
+    const mudancas = Array.isArray(detalhes.mudancasColuna) ? detalhes.mudancasColuna : [];
+    if (!mudancas.length) {
+        $("#detalhe-tarefa-mudancas").html("<li>Nenhuma mudanca registrada.</li>");
+        return;
+    }
+
+    const itens = mudancas.map(function (mudanca) {
+        return `<li><strong>${escapeHtml(mudanca.coluna || "Coluna")}</strong> - ${escapeHtml(formatarDataHora(mudanca.dataHora))}</li>`;
+    }).join("");
+    $("#detalhe-tarefa-mudancas").html(itens);
 }
 
 function renderizarRecompensas() {
@@ -120,6 +159,21 @@ $(function () {
     $("#filtro-recompensas").on("input", function () {
         filtroAtual = $(this).val();
         renderizarRecompensas();
+    });
+
+    $(document).on("click", ".btn-detalhes-recompensa", function () {
+        const id = $(this).closest(".aviso-card").data("id");
+        if (!id) {
+            showToast("Recompensa invalida para abrir detalhes.");
+            return;
+        }
+
+        carregarDetalhesRecompensa(id)
+            .done(function (detalhes) {
+                preencherModalDetalhes(detalhes || {});
+                bootstrap.Modal.getOrCreateInstance(document.getElementById("recompensaDetailsModal")).show();
+            })
+            .fail(() => showToast("Erro ao carregar detalhes da tarefa."));
     });
 });
 
