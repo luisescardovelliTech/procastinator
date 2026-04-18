@@ -94,19 +94,30 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
     public void deletar(Integer id) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             Transaction tx = session.beginTransaction();
-            Tarefa tarefa = session.find(Tarefa.class, id);
-            if (tarefa != null) {
-                session.createMutationQuery(
-                                "update Historico h set h.tarefa = null where h.tarefa.id = :id")
-                        .setParameter("id", id)
-                        .executeUpdate();
-                session.createNativeQuery("delete from tarefa_xingamento where id_tarefa = :id")
-                        .setParameter("id", id)
-                        .executeUpdate();
-                registrarHistorico(session, null, "EXCLUSAO");
-                session.remove(tarefa);
+            try {
+                Tarefa tarefa = session.find(Tarefa.class, id);
+                if (tarefa != null) {
+                    session.createMutationQuery(
+                                    "update Historico h set h.tarefa = null where h.tarefa.id = :id")
+                            .setParameter("id", id)
+                            .executeUpdate();
+                    session.createMutationQuery(
+                                    "update Recompensa r set r.tarefa = null where r.tarefa.id = :id")
+                            .setParameter("id", id)
+                            .executeUpdate();
+                    session.createNativeQuery("delete from tarefa_xingamento where id_tarefa = :id")
+                            .setParameter("id", id)
+                            .executeUpdate();
+                    registrarHistorico(session, null, "EXCLUSAO");
+                    session.remove(tarefa);
+                }
+                tx.commit();
+            } catch (RuntimeException ex) {
+                if (tx != null && tx.isActive()) {
+                    tx.rollback();
+                }
+                throw ex;
             }
-            tx.commit();
         }
     }
 
