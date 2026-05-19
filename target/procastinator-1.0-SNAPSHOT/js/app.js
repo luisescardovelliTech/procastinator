@@ -66,7 +66,6 @@ function formatarDataHora(dataHora) {
 function buildTaskCard(tarefa) {
     const categoria = tarefa.categoria || { nome: "GERAL" };
     const xingamentos = (tarefa.xingamentos || []).map(x => x.mensagem).join(" | ");
-
     return `
         <article class="task-card" data-id="${tarefa.id}">
             <span class="task-badge">${escapeHtml(categoria.nome || "GERAL")}</span>

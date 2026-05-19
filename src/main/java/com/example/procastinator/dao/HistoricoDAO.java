@@ -57,7 +57,6 @@ public class HistoricoDAO {
             } else {
                 historico.setTarefa(null);
             }
-
             tx.commit();
             return carregarDesculpaDetalhada(session, historico.getId());
         }
