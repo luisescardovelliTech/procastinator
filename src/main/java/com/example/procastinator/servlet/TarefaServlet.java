@@ -1,218 +1,247 @@
 package com.example.procastinator.servlet;
 
+import com.example.procastinator.dao.HistoricoDAO;
 import com.example.procastinator.dao.TarefaDAO;
 import com.example.procastinator.model.Categoria;
+import com.example.procastinator.model.Historico;
 import com.example.procastinator.model.StatusTarefa;
 import com.example.procastinator.model.Tarefa;
 import com.example.procastinator.model.Xingamento;
-import com.example.procastinator.util.LocalDateAdapter;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.example.procastinator.web.FlashMensagens;
+import com.example.procastinator.web.IncentivoSorteador;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
-@WebServlet("/api/tarefas/*")
+@WebServlet(urlPatterns = {"/tarefas", "/lista"})
 public class TarefaServlet extends HttpServlet {
+
+    private static final String VIEW = "/WEB-INF/jsp/lista.jsp";
+
     private final TarefaDAO dao = new TarefaDAO();
-    private final Gson gson = new GsonBuilder()
-            .registerTypeAdapter(LocalDate.class, new LocalDateAdapter())
-            .create();
+    private final HistoricoDAO historicoDao = new HistoricoDAO();
+    private final IncentivoSorteador sorteador = new IncentivoSorteador();
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        resp.setContentType("application/json; charset=UTF-8");
-        List<TarefaCardResponse> payload = dao.listarTodos().stream()
-                .map(TarefaCardResponse::from)
-                .toList();
-        resp.getWriter().write(gson.toJson(payload));
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        FlashMensagens.consumir(req);
+        prepararLista(req);
+
+        String verDesculpas = req.getParameter("verDesculpas");
+        if (verDesculpas != null && !verDesculpas.isBlank()) {
+            try {
+                int tarefaId = Integer.parseInt(verDesculpas.trim());
+                Tarefa tarefa = dao.buscarPorId(tarefaId);
+                if (tarefa != null) {
+                    List<Historico> desculpas = historicoDao.listarDesculpas().stream()
+                            .filter(h -> h.getTarefa() != null && tarefaId == h.getTarefa().getId())
+                            .toList();
+                    req.setAttribute("verDesculpasTarefa", tarefa);
+                    req.setAttribute("verDesculpasLista", desculpas);
+                    req.setAttribute("abrirModalDesculpas", true);
+                }
+            } catch (NumberFormatException ignored) {
+                // ignora parametro invalido
+            }
+        }
+
+        req.getRequestDispatcher(VIEW).forward(req, resp);
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        JsonObject body = JsonParser.parseReader(req.getReader()).getAsJsonObject();
-        Tarefa tarefa = new Tarefa();
-        tarefa.setTitulo(getString(body, "titulo", "Nova tarefa de inercia"));
-        tarefa.setDescricao(getString(body, "descricao", ""));
-        tarefa.setStatus(parseStatus(body));
-        tarefa.setDataCriacao(LocalDate.now());
-        LocalDate prazo = parsePrazo(body, null);
+        req.setCharacterEncoding("UTF-8");
+        String acao = trim(req.getParameter("acao"));
+        String base = req.getContextPath() + "/tarefas";
+        HttpSession session = req.getSession();
+
+        try {
+            switch (acao) {
+                case "criar" -> criar(req, session);
+                case "atualizar" -> atualizar(req);
+                case "mover" -> mover(req, session);
+                case "excluir" -> excluir(req);
+                default -> {
+                    FlashMensagens.erro(session, "Acao invalida.");
+                    resp.sendRedirect(base);
+                    return;
+                }
+            }
+        } catch (IllegalArgumentException ex) {
+            FlashMensagens.erro(session, "Nao foi possivel concluir a acao. Verifique os dados.");
+            resp.sendRedirect(base);
+            return;
+        }
+
+        String redirect = base + switch (acao) {
+            case "criar" -> "?t=1";
+            case "atualizar" -> "?t=2";
+            case "mover" -> "?t=3";
+            case "excluir" -> "?t=4";
+            default -> "";
+        };
+        resp.sendRedirect(redirect);
+    }
+
+    private void prepararLista(HttpServletRequest req) {
+        List<Tarefa> todos = dao.listarTodos();
+        List<Tarefa> backlog = new ArrayList<>();
+        List<Tarefa> esperando = new ArrayList<>();
+        List<Tarefa> quaseFiz = new ArrayList<>();
+        for (Tarefa t : todos) {
+            StatusTarefa s = t.getStatus() != null ? t.getStatus() : StatusTarefa.BACKLOG;
+            switch (s) {
+                case BACKLOG -> backlog.add(t);
+                case ESPERANDO -> esperando.add(t);
+                case QUASE_FIZ -> quaseFiz.add(t);
+            }
+        }
+        req.setAttribute("backlog", backlog);
+        req.setAttribute("esperando", esperando);
+        req.setAttribute("quaseFiz", quaseFiz);
+        req.setAttribute("navAtivo", "lista");
+    }
+
+    private void criar(HttpServletRequest req, HttpSession session) {
+        String titulo = trim(req.getParameter("titulo"));
+        if (titulo.isEmpty()) {
+            throw new IllegalArgumentException("titulo");
+        }
+        LocalDate prazo = parsePrazo(req.getParameter("dataPrazo"));
         if (prazo == null) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Informe a data de prazo da tarefa.");
-            return;
+            throw new IllegalArgumentException("prazo");
         }
+
+        Tarefa tarefa = new Tarefa();
+        tarefa.setTitulo(titulo);
+        tarefa.setDescricao(trim(req.getParameter("descricao")));
+        tarefa.setStatus(parseStatus(req.getParameter("status")));
+        tarefa.setDataCriacao(LocalDate.now());
         tarefa.setDataPrazo(prazo);
-        tarefa.setCategoria(parseCategoria(body));
-        tarefa.setXingamentos(parseXingamentos(body));
+        tarefa.setCategoria(parseCategoriaNome(trim(req.getParameter("categoria"))));
+
+        Xingamento elogio = sorteador.sortearElogio();
+        if (elogio != null) {
+            tarefa.setXingamentos(List.of(elogio));
+        }
+
         dao.salvar(tarefa);
-        resp.setStatus(HttpServletResponse.SC_CREATED);
+        FlashMensagens.toast(session, "Tarefa registrada para futura procrastinacao.");
+        if (elogio != null && elogio.getMensagem() != null) {
+            FlashMensagens.elogio(session, elogio.getMensagem());
+        }
     }
 
-    @Override
-    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String pathInfo = req.getPathInfo();
-        JsonObject body = JsonParser.parseReader(req.getReader()).getAsJsonObject();
-        Integer id = parseId(pathInfo, body);
+    private void atualizar(HttpServletRequest req) {
+        Integer id = parseId(req.getParameter("id"));
         if (id == null) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID da tarefa nao informado.");
-            return;
+            throw new IllegalArgumentException("id");
+        }
+        LocalDate prazo = parsePrazo(req.getParameter("dataPrazo"));
+        if (prazo == null) {
+            throw new IllegalArgumentException("prazo");
         }
 
-        if (body.has("status") && body.size() == 1) {
-            dao.atualizarStatus(id, StatusTarefa.valueOf(body.get("status").getAsString()));
+        Tarefa tarefa = new Tarefa();
+        tarefa.setId(id);
+        tarefa.setTitulo(trim(req.getParameter("titulo")));
+        tarefa.setDescricao(trim(req.getParameter("descricao")));
+        tarefa.setStatus(parseStatus(req.getParameter("status")));
+        tarefa.setDataPrazo(prazo);
+        String catNome = trim(req.getParameter("categoria"));
+        if (!catNome.isEmpty()) {
+            tarefa.setCategoria(parseCategoriaNome(catNome));
+        }
+        dao.atualizar(tarefa);
+        FlashMensagens.toast(req.getSession(), "Tarefa atualizada.");
+    }
+
+    private void mover(HttpServletRequest req, HttpSession session) {
+        Integer id = parseId(req.getParameter("id"));
+        if (id == null) {
+            throw new IllegalArgumentException("id");
+        }
+        StatusTarefa status = parseStatus(req.getParameter("status"));
+
+        if (status == StatusTarefa.ESPERANDO || status == StatusTarefa.QUASE_FIZ) {
+            Integer ultimoId = (Integer) session.getAttribute("ultimoXingamentoId");
+            Xingamento xingamento = sorteador.sortearXingamento(ultimoId);
+            if (xingamento != null) {
+                Tarefa tarefa = new Tarefa();
+                tarefa.setId(id);
+                tarefa.setStatus(status);
+                tarefa.setXingamentos(List.of(xingamento));
+                dao.atualizar(tarefa);
+                session.setAttribute("ultimoXingamentoId", xingamento.getId());
+                if (xingamento.getMensagem() != null) {
+                    FlashMensagens.xingamento(session, xingamento.getMensagem());
+                }
+            } else {
+                dao.atualizarStatus(id, status);
+            }
         } else {
-            Tarefa tarefa = new Tarefa();
-            tarefa.setId(id);
-            if (body.has("titulo")) {
-                tarefa.setTitulo(body.get("titulo").getAsString());
-            }
-            if (body.has("descricao")) {
-                tarefa.setDescricao(body.get("descricao").getAsString());
-            }
-            if (body.has("dataPrazo")) {
-                tarefa.setDataPrazo(parsePrazo(body, null));
-            }
-            if (body.has("status")) {
-                tarefa.setStatus(StatusTarefa.valueOf(body.get("status").getAsString()));
-            }
-            if (body.has("categoria")) {
-                tarefa.setCategoria(parseCategoria(body));
-            }
-            if (body.has("xingamentos")) {
-                tarefa.setXingamentos(parseXingamentos(body));
-            }
-            dao.atualizar(tarefa);
+            dao.atualizarStatus(id, status);
         }
-        resp.setStatus(HttpServletResponse.SC_OK);
+        FlashMensagens.toast(session, "Status atualizado.");
     }
 
-    @Override
-    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String pathInfo = req.getPathInfo();
-        if (pathInfo == null || pathInfo.length() <= 1) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID da tarefa nao informado.");
-            return;
+    private void excluir(HttpServletRequest req) {
+        Integer id = parseId(req.getParameter("id"));
+        if (id == null) {
+            throw new IllegalArgumentException("id");
         }
-        dao.deletar(Integer.parseInt(pathInfo.substring(1)));
-        resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
+        dao.deletar(id);
+        FlashMensagens.toast(req.getSession(), "Tarefa removida.");
     }
 
-    private Integer parseId(String pathInfo, JsonObject body) {
-        if (pathInfo != null && pathInfo.length() > 1) {
-            return Integer.parseInt(pathInfo.substring(1));
-        }
-        if (body.has("id")) {
-            return body.get("id").getAsInt();
-        }
-        return null;
-    }
-
-    private String getString(JsonObject json, String field, String defaultValue) {
-        return json.has(field) && !json.get(field).isJsonNull()
-                ? json.get(field).getAsString()
-                : defaultValue;
-    }
-
-    private StatusTarefa parseStatus(JsonObject body) {
-        if (!body.has("status") || body.get("status").isJsonNull()) {
-            return StatusTarefa.BACKLOG;
-        }
-        return StatusTarefa.valueOf(body.get("status").getAsString());
-    }
-
-    private LocalDate parsePrazo(JsonObject body, LocalDate defaultValue) {
-        if (!body.has("dataPrazo") || body.get("dataPrazo").isJsonNull()) {
-            return defaultValue;
-        }
-        String valor = body.get("dataPrazo").getAsString();
-        if (valor == null || valor.isBlank()) {
-            return defaultValue;
-        }
-        String normalizado = valor.trim();
-        if (normalizado.length() > 10) {
-            normalizado = normalizado.substring(0, 10);
-        }
-        return LocalDate.parse(normalizado);
-    }
-
-    private Categoria parseCategoria(JsonObject body) {
-        if (!body.has("categoria") || body.get("categoria").isJsonNull()) {
+    private static Categoria parseCategoriaNome(String nome) {
+        if (nome == null || nome.isBlank()) {
             return null;
         }
-        JsonObject item = body.getAsJsonObject("categoria");
-        Categoria categoria = new Categoria();
-        if (item.has("id")) {
-            categoria.setId(item.get("id").getAsInt());
-        }
-        if (item.has("nome")) {
-            categoria.setNome(item.get("nome").getAsString());
-        }
-        return categoria;
+        Categoria c = new Categoria();
+        c.setNome(nome);
+        return c;
     }
 
-    private List<Xingamento> parseXingamentos(JsonObject body) {
-        List<Xingamento> xingamentos = new ArrayList<>();
-        if (!body.has("xingamentos") || body.get("xingamentos").isJsonNull()) {
-            return xingamentos;
-        }
-        JsonArray jsonXingamentos = body.getAsJsonArray("xingamentos");
-        for (int i = 0; i < jsonXingamentos.size(); i++) {
-            JsonObject item = jsonXingamentos.get(i).getAsJsonObject();
-            Xingamento xingamento = new Xingamento();
-            if (item.has("id")) {
-                xingamento.setId(item.get("id").getAsInt());
-            }
-            if (item.has("mensagem")) {
-                xingamento.setMensagem(item.get("mensagem").getAsString());
-            }
-            if (item.has("tipo")) {
-                xingamento.setTipo(item.get("tipo").getAsString());
-            }
-            xingamentos.add(xingamento);
-        }
-        return xingamentos;
+    private static String trim(String s) {
+        return s == null ? "" : s.trim();
     }
 
-    private record CategoriaDTO(Integer id, String nome) {
-    }
-
-    private record XingamentoDTO(Integer id, String mensagem, String tipo) {
-    }
-
-    private record TarefaCardResponse(
-            Integer id,
-            String titulo,
-            String descricao,
-            String status,
-            String dataPrazo,
-            CategoriaDTO categoria,
-            List<XingamentoDTO> xingamentos
-    ) {
-        static TarefaCardResponse from(Tarefa tarefa) {
-            CategoriaDTO categoria = tarefa.getCategoria() != null
-                    ? new CategoriaDTO(tarefa.getCategoria().getId(), tarefa.getCategoria().getNome())
-                    : null;
-            List<XingamentoDTO> xingamentos = tarefa.getXingamentos().stream()
-                    .map(x -> new XingamentoDTO(x.getId(), x.getMensagem(), x.getTipo()))
-                    .toList();
-            return new TarefaCardResponse(
-                    tarefa.getId(),
-                    tarefa.getTitulo(),
-                    tarefa.getDescricao(),
-                    tarefa.getStatus().name(),
-                    tarefa.getDataPrazo() != null ? tarefa.getDataPrazo().toString() : null,
-                    categoria,
-                    xingamentos
-            );
+    private static Integer parseId(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
         }
+        try {
+            return Integer.parseInt(raw.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private static StatusTarefa parseStatus(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return StatusTarefa.BACKLOG;
+        }
+        return StatusTarefa.valueOf(raw.trim().toUpperCase(Locale.ROOT));
+    }
+
+    private static LocalDate parsePrazo(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        String n = raw.trim();
+        if (n.length() > 10) {
+            n = n.substring(0, 10);
+        }
+        return LocalDate.parse(n);
     }
 }

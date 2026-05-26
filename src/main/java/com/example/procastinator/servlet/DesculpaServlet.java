@@ -1,142 +1,118 @@
 package com.example.procastinator.servlet;
 
 import com.example.procastinator.dao.HistoricoDAO;
-import com.example.procastinator.model.Historico;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.example.procastinator.dao.TarefaDAO;
+import com.example.procastinator.web.FlashMensagens;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.util.List;
 
-@WebServlet("/api/desculpas/*")
+@WebServlet("/desculpas")
 public class DesculpaServlet extends HttpServlet {
-	private final HistoricoDAO dao = new HistoricoDAO();
-	private final Gson gson = new Gson();
 
-	@Override
-	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-		resp.setContentType("application/json; charset=UTF-8");
-		List<DesculpaResponse> payload = dao.listarDesculpas().stream()
-				.map(DesculpaResponse::from)
-				.toList();
-		resp.getWriter().write(gson.toJson(payload));
-	}
+    private static final String VIEW = "/WEB-INF/jsp/desculpas.jsp";
 
-	@Override
-	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-		JsonObject body = JsonParser.parseReader(req.getReader()).getAsJsonObject();
-		String comentario = body.has("comentario") && !body.get("comentario").isJsonNull()
-				? body.get("comentario").getAsString().trim()
-				: "";
-		if (comentario.isBlank()) {
-			resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Comentario da desculpa e obrigatorio.");
-			return;
-		}
+    private final HistoricoDAO dao = new HistoricoDAO();
+    private final TarefaDAO tarefaDao = new TarefaDAO();
 
-		Integer tarefaId = body.has("tarefaId") && !body.get("tarefaId").isJsonNull()
-				? body.get("tarefaId").getAsInt()
-				: null;
-		Integer nivelEficacia = body.has("nivelEficacia") && !body.get("nivelEficacia").isJsonNull()
-				? body.get("nivelEficacia").getAsInt()
-				: null;
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        FlashMensagens.consumir(req);
+        req.setAttribute("desculpas", dao.listarDesculpas());
+        req.setAttribute("tarefasSelect", tarefaDao.listarTodos());
+        req.setAttribute("navAtivo", "desculpas");
+        req.getRequestDispatcher(VIEW).forward(req, resp);
+    }
 
-		Historico salvo = dao.salvarDesculpa(tarefaId, comentario, nivelEficacia);
-		resp.setStatus(HttpServletResponse.SC_CREATED);
-		resp.setContentType("application/json; charset=UTF-8");
-		resp.getWriter().write(gson.toJson(DesculpaResponse.from(salvo)));
-	}
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        req.setCharacterEncoding("UTF-8");
+        String acao = trim(req.getParameter("acao"));
+        String base = req.getContextPath() + "/desculpas";
+        var session = req.getSession();
 
-	@Override
-	protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-		Integer id = extrairId(req);
-		if (id == null) {
-			resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Id da desculpa invalido.");
-			return;
-		}
+        try {
+            switch (acao) {
+                case "criar" -> criar(req);
+                case "atualizar" -> atualizar(req);
+                case "excluir" -> excluir(req);
+                default -> {
+                    FlashMensagens.erro(session, "Acao invalida.");
+                    resp.sendRedirect(base);
+                    return;
+                }
+            }
+        } catch (IllegalArgumentException ex) {
+            FlashMensagens.erro(session, "Nao foi possivel concluir a acao.");
+            resp.sendRedirect(base);
+            return;
+        }
 
-		JsonObject body = JsonParser.parseReader(req.getReader()).getAsJsonObject();
-		String comentario = body.has("comentario") && !body.get("comentario").isJsonNull()
-				? body.get("comentario").getAsString().trim()
-				: "";
-		if (comentario.isBlank()) {
-			resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Comentario da desculpa e obrigatorio.");
-			return;
-		}
+        String t = switch (acao) {
+            case "criar" -> "1";
+            case "atualizar" -> "2";
+            case "excluir" -> "3";
+            default -> "";
+        };
+        FlashMensagens.toast(session, switch (acao) {
+            case "criar" -> "Desculpa arquivada no log com sucesso.";
+            case "atualizar" -> "Desculpa atualizada com sucesso.";
+            case "excluir" -> "Desculpa excluida com sucesso.";
+            default -> "";
+        });
+        resp.sendRedirect(base + "?t=" + t);
+    }
 
-		Integer tarefaId = body.has("tarefaId") && !body.get("tarefaId").isJsonNull()
-				? body.get("tarefaId").getAsInt()
-				: null;
-		Integer nivelEficacia = body.has("nivelEficacia") && !body.get("nivelEficacia").isJsonNull()
-				? body.get("nivelEficacia").getAsInt()
-				: null;
+    private void criar(HttpServletRequest req) {
+        String comentario = trim(req.getParameter("comentario"));
+        if (comentario.isBlank()) {
+            throw new IllegalArgumentException("comentario");
+        }
+        dao.salvarDesculpa(parseIntOrNull(req.getParameter("tarefaId")), comentario, parseIntOrNull(req.getParameter("nivelEficacia")));
+    }
 
-		Historico atualizado = dao.atualizarDesculpa(id, tarefaId, comentario, nivelEficacia);
-		if (atualizado == null) {
-			resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Desculpa nao encontrada.");
-			return;
-		}
+    private void atualizar(HttpServletRequest req) {
+        Integer id = parseIntRequired(req.getParameter("id"));
+        String comentario = trim(req.getParameter("comentario"));
+        if (comentario.isBlank()) {
+            throw new IllegalArgumentException("comentario");
+        }
+        if (dao.atualizarDesculpa(id, parseIntOrNull(req.getParameter("tarefaId")), comentario, parseIntOrNull(req.getParameter("nivelEficacia"))) == null) {
+            throw new IllegalArgumentException("notfound");
+        }
+    }
 
-		resp.setContentType("application/json; charset=UTF-8");
-		resp.getWriter().write(gson.toJson(DesculpaResponse.from(atualizado)));
-	}
+    private void excluir(HttpServletRequest req) {
+        Integer id = parseIntRequired(req.getParameter("id"));
+        if (!dao.excluirDesculpa(id)) {
+            throw new IllegalArgumentException("notfound");
+        }
+    }
 
-	@Override
-	protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-		Integer id = extrairId(req);
-		if (id == null) {
-			resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Id da desculpa invalido.");
-			return;
-		}
+    private static String trim(String s) {
+        return s == null ? "" : s.trim();
+    }
 
-		boolean removido = dao.excluirDesculpa(id);
-		if (!removido) {
-			resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Desculpa nao encontrada.");
-			return;
-		}
+    private static Integer parseIntOrNull(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(raw.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
 
-		resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
-	}
-
-	private Integer extrairId(HttpServletRequest req) {
-		String pathInfo = req.getPathInfo();
-		if (pathInfo == null || pathInfo.equals("/") || pathInfo.isBlank()) {
-			return null;
-		}
-		String valor = pathInfo.startsWith("/") ? pathInfo.substring(1) : pathInfo;
-		if (valor.contains("/")) {
-			return null;
-		}
-		try {
-			return Integer.parseInt(valor);
-		} catch (NumberFormatException e) {
-			return null;
-		}
-	}
-
-	private record DesculpaResponse(
-			Integer id,
-			String dataHora,
-			String comentario,
-			Integer nivelEficacia,
-			Integer tarefaId,
-			String tarefaTitulo
-	) {
-		static DesculpaResponse from(Historico historico) {
-			return new DesculpaResponse(
-					historico.getId(),
-					historico.getDataHora() != null ? historico.getDataHora().toString() : null,
-					historico.getComentario(),
-					historico.getNivelEficacia(),
-					historico.getTarefa() != null ? historico.getTarefa().getId() : null,
-					historico.getTarefa() != null ? historico.getTarefa().getTitulo() : "Sem tarefa associada"
-			);
-		}
-	}
+    private static Integer parseIntRequired(String raw) {
+        Integer v = parseIntOrNull(raw);
+        if (v == null) {
+            throw new IllegalArgumentException("id");
+        }
+        return v;
+    }
 }
-
-

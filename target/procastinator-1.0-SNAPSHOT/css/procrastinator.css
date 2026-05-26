@@ -264,16 +264,3 @@ body {
     padding: 1rem;
 }
 
-.xingamento-modal-card {
-    background: linear-gradient(180deg, #212529 0%, #343a40 100%);
-    border-radius: 0.75rem;
-    padding: 1rem;
-    color: #fff;
-}
-
-.xingamento-modal-msg {
-    font-size: 1.1rem;
-    line-height: 1.45;
-    font-weight: 600;
-}
-
