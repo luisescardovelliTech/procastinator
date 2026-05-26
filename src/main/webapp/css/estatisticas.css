@@ -15,6 +15,16 @@
     color: #64748b !important;
 }
 
+.estatisticas-acoes .btn-exportar-pdf {
+    font-weight: 600;
+    padding-inline: 1rem;
+}
+
+.estatisticas-acoes .btn-exportar-pdf:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0.35rem 0.75rem rgba(220, 38, 38, 0.35) !important;
+}
+
 .culpa-kpi-card {
     background: #ffffff;
     border: 1px solid #dbe3ef;

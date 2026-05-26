@@ -2,197 +2,57 @@ package com.example.procastinator.servlet;
 
 import com.example.procastinator.dao.RecompensaDAO;
 import com.example.procastinator.model.Recompensa;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.example.procastinator.model.Tarefa;
+import com.example.procastinator.web.FlashMensagens;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
-@WebServlet("/api/recompensas/*")
+@WebServlet("/recompensas")
 public class RecompensaServlet extends HttpServlet {
+
+    private static final String VIEW = "/WEB-INF/jsp/recompensas.jsp";
+
     private final RecompensaDAO dao = new RecompensaDAO();
-    private final Gson gson = new Gson();
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        resp.setContentType("application/json; charset=UTF-8");
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        FlashMensagens.consumir(req);
+        List<Recompensa> lista = dao.listarTodos();
+        req.setAttribute("recompensas", lista);
+        req.setAttribute("totalPontos", lista.stream().mapToInt(r -> r.getPontos() != null ? r.getPontos() : 0).sum());
+        req.setAttribute("navAtivo", "recompensas");
 
-        List<String> segmentos = extrairSegmentos(req);
-        if (segmentos.size() == 2 && "detalhes".equalsIgnoreCase(segmentos.get(1))) {
-            Integer recompensaId = parseInteger(segmentos.get(0));
-            if (recompensaId == null) {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Id da recompensa invalido.");
-                return;
+        String detalhesId = req.getParameter("detalhes");
+        if (detalhesId != null && !detalhesId.isBlank()) {
+            try {
+                int id = Integer.parseInt(detalhesId.trim());
+                Recompensa recompensa = dao.buscarPorId(id);
+                if (recompensa != null) {
+                    Integer tarefaId = recompensa.getTarefa() != null ? recompensa.getTarefa().getId() : null;
+                    Tarefa tarefa = recompensa.getTarefa();
+                    req.setAttribute("detalheRecompensaId", id);
+                    req.setAttribute("detalheTarefaTitulo", tarefa != null ? tarefa.getTitulo() : "Sem tarefa associada");
+                    req.setAttribute("detalheTarefaDescricao", tarefa != null ? tarefa.getDescricao() : "");
+                    req.setAttribute("detalheTarefaCriacao", tarefa != null && tarefa.getDataCriacao() != null
+                            ? tarefa.getDataCriacao().toString() : null);
+                    req.setAttribute("detalheMudancas", dao.listarMudancasDeColunaDaTarefa(tarefaId));
+                    req.setAttribute("abrirModalDetalhes", true);
+                }
+            } catch (NumberFormatException ignored) {
+                // ignora
             }
-
-            Recompensa recompensa = dao.buscarPorId(recompensaId);
-            if (recompensa == null) {
-                resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Recompensa nao encontrada.");
-                return;
-            }
-
-            Integer tarefaId = recompensa.getTarefa() != null ? recompensa.getTarefa().getId() : null;
-            List<MudancaColunaResponse> mudancas = dao.listarMudancasDeColunaDaTarefa(tarefaId).stream()
-                    .map(item -> new MudancaColunaResponse(
-                            normalizarDestino(item.getTitulo()),
-                            item.getDataConquista() != null ? item.getDataConquista().toString() : null
-                    ))
-                    .toList();
-
-            RecompensaDetalheResponse payload = new RecompensaDetalheResponse(
-                    recompensa.getId(),
-                    tarefaId,
-                    recompensa.getTarefa() != null ? recompensa.getTarefa().getTitulo() : "Sem tarefa associada",
-                    recompensa.getTarefa() != null ? recompensa.getTarefa().getDescricao() : "",
-                    recompensa.getTarefa() != null && recompensa.getTarefa().getDataCriacao() != null
-                            ? recompensa.getTarefa().getDataCriacao().toString()
-                            : null,
-                    mudancas
-            );
-            resp.getWriter().write(gson.toJson(payload));
-            return;
         }
 
-        Integer id = extrairId(req);
-        if (id != null) {
-            Recompensa recompensa = dao.buscarPorId(id);
-            if (recompensa == null) {
-                resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Recompensa nao encontrada.");
-                return;
-            }
-            resp.getWriter().write(gson.toJson(RecompensaResponse.from(recompensa)));
-            return;
-        }
-
-        List<RecompensaResponse> payload = dao.listarTodos().stream()
-                .map(RecompensaResponse::from)
-                .toList();
-        resp.getWriter().write(gson.toJson(payload));
+        req.getRequestDispatcher(VIEW).forward(req, resp);
     }
 
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        JsonObject body = JsonParser.parseReader(req.getReader()).getAsJsonObject();
-        String titulo = getTextoObrigatorio(body, resp);
-        if (titulo == null) {
-            return;
-        }
-
-        Recompensa salva = dao.salvar(
-                titulo,
-                getTexto(body, "descricao", "")
-        );
-
-        resp.setStatus(HttpServletResponse.SC_CREATED);
-        resp.setContentType("application/json; charset=UTF-8");
-        resp.getWriter().write(gson.toJson(RecompensaResponse.from(salva)));
-    }
-
-    @Override
-    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        Integer id = extrairId(req);
-        if (id == null) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Id da recompensa invalido.");
-            return;
-        }
-
-        JsonObject body = JsonParser.parseReader(req.getReader()).getAsJsonObject();
-        String titulo = getTextoObrigatorio(body, resp);
-        if (titulo == null) {
-            return;
-        }
-
-        Recompensa atualizada = dao.atualizar(
-                id,
-                titulo,
-                getTexto(body, "descricao", "")
-        );
-
-        if (atualizada == null) {
-            resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Recompensa nao encontrada.");
-            return;
-        }
-
-        resp.setContentType("application/json; charset=UTF-8");
-        resp.getWriter().write(gson.toJson(RecompensaResponse.from(atualizada)));
-    }
-
-    @Override
-    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        Integer id = extrairId(req);
-        if (id == null) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Id da recompensa invalido.");
-            return;
-        }
-
-        boolean removido = dao.excluir(id);
-        if (!removido) {
-            resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Recompensa nao encontrada.");
-            return;
-        }
-
-        resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
-    }
-
-    private String getTextoObrigatorio(JsonObject body, HttpServletResponse resp) throws IOException {
-        String titulo = getTexto(body, "titulo", "");
-        if (titulo.isBlank()) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Titulo da recompensa e obrigatorio.");
-            return null;
-        }
-        return titulo;
-    }
-
-    private String getTexto(JsonObject body, String campo, String valorPadrao) {
-        if (!body.has(campo) || body.get(campo).isJsonNull()) {
-            return valorPadrao;
-        }
-        return body.get(campo).getAsString().trim();
-    }
-
-    private Integer extrairId(HttpServletRequest req) {
-        String pathInfo = req.getPathInfo();
-        if (pathInfo == null || pathInfo.equals("/") || pathInfo.isBlank()) {
-            return null;
-        }
-
-        String valor = pathInfo.startsWith("/") ? pathInfo.substring(1) : pathInfo;
-        if (valor.contains("/")) {
-            return null;
-        }
-
-        try {
-            return Integer.parseInt(valor);
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-    private List<String> extrairSegmentos(HttpServletRequest req) {
-        String pathInfo = req.getPathInfo();
-        if (pathInfo == null || pathInfo.isBlank() || "/".equals(pathInfo)) {
-            return List.of();
-        }
-        return Arrays.stream(pathInfo.split("/"))
-                .filter(parte -> parte != null && !parte.isBlank())
-                .toList();
-    }
-
-    private Integer parseInteger(String valor) {
-        try {
-            return Integer.parseInt(valor);
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-    private String normalizarDestino(String tituloEvento) {
+    private static String normalizarDestino(String tituloEvento) {
         if (tituloEvento == null || tituloEvento.isBlank()) {
             return "Mudanca de coluna";
         }
@@ -205,43 +65,7 @@ public class RecompensaServlet extends HttpServlet {
         return tituloEvento;
     }
 
-    private record RecompensaResponse(
-            Integer id,
-            String titulo,
-            String descricao,
-            Integer pontos,
-            String dataConquista,
-            Integer tarefaId,
-            String tarefaTitulo
-    ) {
-        static RecompensaResponse from(Recompensa recompensa) {
-            return new RecompensaResponse(
-                    recompensa.getId(),
-                    recompensa.getTitulo(),
-                    recompensa.getDescricao(),
-                    recompensa.getPontos(),
-                    recompensa.getDataConquista() != null ? recompensa.getDataConquista().toString() : null,
-                    recompensa.getTarefa() != null ? recompensa.getTarefa().getId() : null,
-                    recompensa.getTarefa() != null ? recompensa.getTarefa().getTitulo() : "Sem tarefa associada"
-            );
-        }
-    }
-
-    private record RecompensaDetalheResponse(
-            Integer recompensaId,
-            Integer tarefaId,
-            String tarefaTitulo,
-            String tarefaDescricao,
-            String dataCriacaoTarefa,
-            List<MudancaColunaResponse> mudancasColuna
-    ) {
-    }
-
-    private record MudancaColunaResponse(
-            String coluna,
-            String dataHora
-    ) {
+    public static String destinoColuna(Recompensa r) {
+        return normalizarDestino(r.getTitulo());
     }
 }
-
-

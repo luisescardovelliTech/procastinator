@@ -1,160 +1,115 @@
 package com.example.procastinator.servlet;
 
 import com.example.procastinator.dao.XingamentoDAO;
-import com.example.procastinator.model.Xingamento;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.example.procastinator.web.FlashMensagens;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.util.List;
 
-@WebServlet("/api/avisos/*")
+@WebServlet(urlPatterns = {"/avisos", "/xingamentos"})
 public class AvisoServlet extends HttpServlet {
+
+    private static final String VIEW = "/WEB-INF/jsp/avisos.jsp";
+
     private final XingamentoDAO dao = new XingamentoDAO();
-    private final Gson gson = new Gson();
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        resp.setContentType("application/json; charset=UTF-8");
-
-        Integer id = extrairId(req);
-        if (id != null) {
-            Xingamento aviso = dao.buscarPorId(id);
-            if (aviso == null) {
-                escreverErroTexto(resp, HttpServletResponse.SC_NOT_FOUND, "Aviso nao encontrado.");
-                return;
-            }
-            resp.getWriter().write(gson.toJson(AvisoResponse.from(aviso)));
-            return;
-        }
-
-        List<AvisoResponse> payload = dao.listarTodos().stream()
-                .map(AvisoResponse::from)
-                .toList();
-        resp.getWriter().write(gson.toJson(payload));
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        FlashMensagens.consumir(req);
+        req.setAttribute("avisos", dao.listarTodos());
+        req.setAttribute("navAtivo", "avisos");
+        req.getRequestDispatcher(VIEW).forward(req, resp);
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        JsonObject body = JsonParser.parseReader(req.getReader()).getAsJsonObject();
-        String mensagem = getTextoObrigatorio(body, resp);
-        if (mensagem == null) {
-            return;
-        }
-
-        String tipo = getTexto(body, "tipo", "XINGAMENTO");
-        Xingamento salvo = dao.salvarAviso(mensagem, tipo);
-
-        resp.setStatus(HttpServletResponse.SC_CREATED);
-        resp.setContentType("application/json; charset=UTF-8");
-        resp.getWriter().write(gson.toJson(AvisoResponse.from(salvo)));
-    }
-
-    @Override
-    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        Integer id = extrairId(req);
-        if (id == null) {
-            escreverErroTexto(resp, HttpServletResponse.SC_BAD_REQUEST, "Id do aviso invalido.");
-            return;
-        }
-
-        JsonObject body = JsonParser.parseReader(req.getReader()).getAsJsonObject();
-        String mensagem = getTextoObrigatorio(body, resp);
-        if (mensagem == null) {
-            return;
-        }
-
-        String tipo = getTexto(body, "tipo", "XINGAMENTO");
-        Xingamento atualizado = dao.atualizarAviso(id, mensagem, tipo);
-
-        if (atualizado == null) {
-            escreverErroTexto(resp, HttpServletResponse.SC_NOT_FOUND, "Aviso nao encontrado.");
-            return;
-        }
-
-        resp.setContentType("application/json; charset=UTF-8");
-        resp.getWriter().write(gson.toJson(AvisoResponse.from(atualizado)));
-    }
-
-    @Override
-    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        Integer id = extrairId(req);
-        if (id == null) {
-            escreverErroTexto(resp, HttpServletResponse.SC_BAD_REQUEST, "Id do aviso invalido.");
-            return;
-        }
-
-        XingamentoDAO.ExclusaoAvisoResultado resultado = dao.excluirAviso(id);
-        if (resultado == XingamentoDAO.ExclusaoAvisoResultado.NAO_ENCONTRADO) {
-            escreverErroTexto(resp, HttpServletResponse.SC_NOT_FOUND, "Aviso nao encontrado.");
-            return;
-        }
-        if (resultado == XingamentoDAO.ExclusaoAvisoResultado.VINCULADO_A_TAREFA) {
-            escreverErroTexto(resp, HttpServletResponse.SC_CONFLICT,
-                    "Nao e possivel excluir: este xingamento/elogio esta vinculado a uma tarefa.");
-            return;
-        }
-
-        resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
-    }
-
-    private String getTextoObrigatorio(JsonObject body, HttpServletResponse resp) throws IOException {
-        String mensagem = getTexto(body, "mensagem", "");
-        if (mensagem.isBlank()) {
-            escreverErroTexto(resp, HttpServletResponse.SC_BAD_REQUEST, "Mensagem do aviso e obrigatoria.");
-            return null;
-        }
-        return mensagem;
-    }
-
-    private void escreverErroTexto(HttpServletResponse resp, int status, String mensagem) throws IOException {
-        resp.setStatus(status);
-        resp.setContentType("text/plain; charset=UTF-8");
-        resp.getWriter().write(mensagem);
-    }
-
-    private String getTexto(JsonObject body, String campo, String valorPadrao) {
-        if (!body.has(campo) || body.get(campo).isJsonNull()) {
-            return valorPadrao;
-        }
-        return body.get(campo).getAsString().trim();
-    }
-
-    private Integer extrairId(HttpServletRequest req) {
-        String pathInfo = req.getPathInfo();
-        if (pathInfo == null || pathInfo.equals("/") || pathInfo.isBlank()) {
-            return null;
-        }
-
-        String valor = pathInfo.startsWith("/") ? pathInfo.substring(1) : pathInfo;
-        if (valor.contains("/")) {
-            return null;
-        }
+        req.setCharacterEncoding("UTF-8");
+        String acao = trim(req.getParameter("acao"));
+        String base = req.getContextPath() + "/avisos";
+        var session = req.getSession();
 
         try {
-            return Integer.parseInt(valor);
-        } catch (NumberFormatException e) {
-            return null;
+            switch (acao) {
+                case "criar" -> {
+                    criar(req);
+                    FlashMensagens.toast(session, "Frase cadastrada com sucesso.");
+                    resp.sendRedirect(base + "?t=1");
+                }
+                case "atualizar" -> {
+                    atualizar(req);
+                    FlashMensagens.toast(session, "Frase atualizada com sucesso.");
+                    resp.sendRedirect(base + "?t=2");
+                }
+                case "excluir" -> {
+                    if (!excluir(req, session)) {
+                        resp.sendRedirect(base);
+                        return;
+                    }
+                    FlashMensagens.toast(session, "Frase excluida com sucesso.");
+                    resp.sendRedirect(base + "?t=3");
+                }
+                default -> {
+                    FlashMensagens.erro(session, "Acao invalida.");
+                    resp.sendRedirect(base);
+                }
+            }
+        } catch (IllegalArgumentException ex) {
+            FlashMensagens.erro(session, "Nao foi possivel concluir a acao.");
+            resp.sendRedirect(base);
+        }
+        return;
+    }
+
+    private void criar(HttpServletRequest req) {
+        String mensagem = trim(req.getParameter("mensagem"));
+        if (mensagem.isBlank()) {
+            throw new IllegalArgumentException("mensagem");
+        }
+        dao.salvarAviso(mensagem, trim(req.getParameter("tipo")));
+    }
+
+    private void atualizar(HttpServletRequest req) {
+        Integer id = parseIntRequired(req.getParameter("id"));
+        String mensagem = trim(req.getParameter("mensagem"));
+        if (mensagem.isBlank()) {
+            throw new IllegalArgumentException("mensagem");
+        }
+        String tipo = trim(req.getParameter("tipo"));
+        if (dao.atualizarAviso(id, mensagem, tipo.isEmpty() ? "XINGAMENTO" : tipo) == null) {
+            throw new IllegalArgumentException("notfound");
         }
     }
 
-    private record AvisoResponse(
-            Integer id,
-            String mensagem,
-            String tipo
-    ) {
-        static AvisoResponse from(Xingamento aviso) {
-            return new AvisoResponse(
-                    aviso.getId(),
-                    aviso.getMensagem(),
-                    aviso.getTipo()
-            );
+    private boolean excluir(HttpServletRequest req, jakarta.servlet.http.HttpSession session) {
+        Integer id = parseIntRequired(req.getParameter("id"));
+        XingamentoDAO.ExclusaoAvisoResultado r = dao.excluirAviso(id);
+        if (r == XingamentoDAO.ExclusaoAvisoResultado.NAO_ENCONTRADO) {
+            throw new IllegalArgumentException("notfound");
+        }
+        if (r == XingamentoDAO.ExclusaoAvisoResultado.VINCULADO_A_TAREFA) {
+            FlashMensagens.erro(session,
+                    "Nao e possivel excluir: este xingamento/elogio esta vinculado a uma tarefa.");
+            return false;
+        }
+        return true;
+    }
+
+    private static String trim(String s) {
+        return s == null ? "" : s.trim();
+    }
+
+    private static Integer parseIntRequired(String raw) {
+        if (raw == null || raw.isBlank()) {
+            throw new IllegalArgumentException("id");
+        }
+        try {
+            return Integer.parseInt(raw.trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("id");
         }
     }
 }
-
