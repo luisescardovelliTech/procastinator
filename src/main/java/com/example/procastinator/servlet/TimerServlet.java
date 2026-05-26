@@ -4,6 +4,7 @@ import com.example.procastinator.dao.TarefaDAO;
 import com.example.procastinator.model.StatusTarefa;
 import com.example.procastinator.model.Tarefa;
 import com.example.procastinator.web.FlashMensagens;
+import com.example.procastinator.web.SessaoUsuario;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -27,7 +28,7 @@ public class TimerServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         FlashMensagens.consumir(req);
-        List<Tarefa> all = dao.listarTodos();
+        List<Tarefa> all = dao.listarPorUsuario(SessaoUsuario.obterId(req));
         long pendentes = all.stream().filter(t -> t.getStatus() != StatusTarefa.QUASE_FIZ).count();
         LocalDate proximo = all.stream()
                 .map(Tarefa::getDataPrazo)

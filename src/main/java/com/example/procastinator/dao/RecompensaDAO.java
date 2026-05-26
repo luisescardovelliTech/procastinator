@@ -13,19 +13,42 @@ import java.util.List;
 public class RecompensaDAO {
 
     public List<Recompensa> listarTodos() {
+        throw new UnsupportedOperationException("Use listarPorUsuario(Integer)");
+    }
+
+    public List<Recompensa> listarPorUsuario(Integer usuarioId) {
+        if (usuarioId == null) {
+            return List.of();
+        }
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.createQuery(
                             "select r from com.example.procastinator.model.Recompensa r " +
-                                    "left join fetch r.tarefa " +
+                                    "left join fetch r.tarefa t " +
+                                    "where t.usuario.id = :usuarioId " +
                                     "order by r.dataConquista desc, r.id desc",
                             Recompensa.class)
+                    .setParameter("usuarioId", usuarioId)
                     .list();
         }
     }
 
     public Recompensa buscarPorId(Integer id) {
+        throw new UnsupportedOperationException("Use buscarPorId(Integer, Integer)");
+    }
+
+    public Recompensa buscarPorId(Integer id, Integer usuarioId) {
+        if (id == null || usuarioId == null) {
+            return null;
+        }
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return carregarDetalhada(session, id);
+            return session.createQuery(
+                            "select r from com.example.procastinator.model.Recompensa r " +
+                                    "left join fetch r.tarefa t " +
+                                    "where r.id = :id and t.usuario.id = :usuarioId",
+                            Recompensa.class)
+                    .setParameter("id", id)
+                    .setParameter("usuarioId", usuarioId)
+                    .uniqueResult();
         }
     }
 

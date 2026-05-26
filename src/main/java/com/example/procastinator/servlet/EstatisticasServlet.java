@@ -4,6 +4,7 @@ import com.example.procastinator.dao.RecompensaDAO;
 import com.example.procastinator.dao.TarefaDAO;
 import com.example.procastinator.web.EstatisticasComputador;
 import com.example.procastinator.web.FlashMensagens;
+import com.example.procastinator.web.SessaoUsuario;
 import com.google.gson.Gson;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -25,7 +26,10 @@ public class EstatisticasServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         FlashMensagens.consumir(req);
-        var payload = EstatisticasComputador.build(tarefaDao.listarTodos(), recompensaDao.listarTodos());
+        Integer usuarioId = SessaoUsuario.obterId(req);
+        var payload = EstatisticasComputador.build(
+                tarefaDao.listarPorUsuario(usuarioId),
+                recompensaDao.listarPorUsuario(usuarioId));
         String json = gson.toJson(payload).replace("<", "\\u003c");
         req.setAttribute("dashboardJson", json);
         req.setAttribute("navAtivo", "estatisticas");

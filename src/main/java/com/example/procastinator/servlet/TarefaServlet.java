@@ -9,6 +9,7 @@ import com.example.procastinator.model.Tarefa;
 import com.example.procastinator.model.Xingamento;
 import com.example.procastinator.web.FlashMensagens;
 import com.example.procastinator.web.IncentivoSorteador;
+import com.example.procastinator.web.SessaoUsuario;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -36,13 +37,14 @@ public class TarefaServlet extends HttpServlet {
         FlashMensagens.consumir(req);
         prepararLista(req);
 
+        Integer usuarioId = SessaoUsuario.obterId(req);
         String verDesculpas = req.getParameter("verDesculpas");
         if (verDesculpas != null && !verDesculpas.isBlank()) {
             try {
                 int tarefaId = Integer.parseInt(verDesculpas.trim());
-                Tarefa tarefa = dao.buscarPorId(tarefaId);
+                Tarefa tarefa = dao.buscarPorId(tarefaId, usuarioId);
                 if (tarefa != null) {
-                    List<Historico> desculpas = historicoDao.listarDesculpas().stream()
+                    List<Historico> desculpas = historicoDao.listarDesculpas(usuarioId).stream()
                             .filter(h -> h.getTarefa() != null && tarefaId == h.getTarefa().getId())
                             .toList();
                     req.setAttribute("verDesculpasTarefa", tarefa);
@@ -65,11 +67,12 @@ public class TarefaServlet extends HttpServlet {
         HttpSession session = req.getSession();
 
         try {
+            Integer usuarioId = SessaoUsuario.obterId(req);
             switch (acao) {
-                case "criar" -> criar(req, session);
-                case "atualizar" -> atualizar(req);
-                case "mover" -> mover(req, session);
-                case "excluir" -> excluir(req);
+                case "criar" -> criar(req, session, usuarioId);
+                case "atualizar" -> atualizar(req, usuarioId);
+                case "mover" -> mover(req, session, usuarioId);
+                case "excluir" -> excluir(req, usuarioId);
                 default -> {
                     FlashMensagens.erro(session, "Acao invalida.");
                     resp.sendRedirect(base);
@@ -93,7 +96,7 @@ public class TarefaServlet extends HttpServlet {
     }
 
     private void prepararLista(HttpServletRequest req) {
-        List<Tarefa> todos = dao.listarTodos();
+        List<Tarefa> todos = dao.listarPorUsuario(SessaoUsuario.obterId(req));
         List<Tarefa> backlog = new ArrayList<>();
         List<Tarefa> esperando = new ArrayList<>();
         List<Tarefa> quaseFiz = new ArrayList<>();
@@ -111,7 +114,7 @@ public class TarefaServlet extends HttpServlet {
         req.setAttribute("navAtivo", "lista");
     }
 
-    private void criar(HttpServletRequest req, HttpSession session) {
+    private void criar(HttpServletRequest req, HttpSession session, Integer usuarioId) {
         String titulo = trim(req.getParameter("titulo"));
         if (titulo.isEmpty()) {
             throw new IllegalArgumentException("titulo");
@@ -134,14 +137,14 @@ public class TarefaServlet extends HttpServlet {
             tarefa.setXingamentos(List.of(elogio));
         }
 
-        dao.salvar(tarefa);
+        dao.salvar(tarefa, usuarioId);
         FlashMensagens.toast(session, "Tarefa registrada para futura procrastinacao.");
         if (elogio != null && elogio.getMensagem() != null) {
             FlashMensagens.elogio(session, elogio.getMensagem());
         }
     }
 
-    private void atualizar(HttpServletRequest req) {
+    private void atualizar(HttpServletRequest req, Integer usuarioId) {
         Integer id = parseId(req.getParameter("id"));
         if (id == null) {
             throw new IllegalArgumentException("id");
@@ -161,11 +164,11 @@ public class TarefaServlet extends HttpServlet {
         if (!catNome.isEmpty()) {
             tarefa.setCategoria(parseCategoriaNome(catNome));
         }
-        dao.atualizar(tarefa);
+        dao.atualizar(tarefa, usuarioId);
         FlashMensagens.toast(req.getSession(), "Tarefa atualizada.");
     }
 
-    private void mover(HttpServletRequest req, HttpSession session) {
+    private void mover(HttpServletRequest req, HttpSession session, Integer usuarioId) {
         Integer id = parseId(req.getParameter("id"));
         if (id == null) {
             throw new IllegalArgumentException("id");
@@ -180,26 +183,26 @@ public class TarefaServlet extends HttpServlet {
                 tarefa.setId(id);
                 tarefa.setStatus(status);
                 tarefa.setXingamentos(List.of(xingamento));
-                dao.atualizar(tarefa);
+                dao.atualizar(tarefa, usuarioId);
                 session.setAttribute("ultimoXingamentoId", xingamento.getId());
                 if (xingamento.getMensagem() != null) {
                     FlashMensagens.xingamento(session, xingamento.getMensagem());
                 }
             } else {
-                dao.atualizarStatus(id, status);
+                dao.atualizarStatus(id, status, usuarioId);
             }
         } else {
-            dao.atualizarStatus(id, status);
+            dao.atualizarStatus(id, status, usuarioId);
         }
         FlashMensagens.toast(session, "Status atualizado.");
     }
 
-    private void excluir(HttpServletRequest req) {
+    private void excluir(HttpServletRequest req, Integer usuarioId) {
         Integer id = parseId(req.getParameter("id"));
         if (id == null) {
             throw new IllegalArgumentException("id");
         }
-        dao.deletar(id);
+        dao.deletar(id, usuarioId);
         FlashMensagens.toast(req.getSession(), "Tarefa removida.");
     }
 

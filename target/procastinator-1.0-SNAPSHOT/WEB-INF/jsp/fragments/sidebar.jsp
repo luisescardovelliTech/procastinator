@@ -18,9 +18,15 @@
     </div>
     <div class="card mt-4 border-0 bg-transparent">
         <div class="card-body p-0 small">
-            <div class="fw-bold text-uppercase">Setor de Inercia</div>
-            <div class="text-muted">Protocolo 0800-NADA</div>
-            <button type="button" class="btn btn-dark btn-sm w-100 mt-2">Desistir Cedo</button>
+            <div class="fw-bold text-uppercase mb-1">
+                <c:out value="${empty sessionScope.usuarioNome ? 'Usuario' : sessionScope.usuarioNome}"/>
+            </div>
+            <div class="text-muted text-break mb-2">
+                <c:out value="${empty sessionScope.usuarioEmail ? '' : sessionScope.usuarioEmail}"/>
+            </div>
+            <form method="post" action="${ctx}/logout" class="mb-0">
+                <button type="submit" class="btn btn-dark btn-sm w-100">Sair</button>
+            </form>
         </div>
     </div>
 </aside>

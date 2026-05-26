@@ -1,2 +1,5 @@
 # Configuracao local do Hibernate (URL, usuario e senha do banco)
 src/main/resources/hibernate.cfg.xml
+
+# Build
+target/

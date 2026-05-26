@@ -3,6 +3,7 @@ package com.example.procastinator.servlet;
 import com.example.procastinator.dao.HistoricoDAO;
 import com.example.procastinator.dao.TarefaDAO;
 import com.example.procastinator.web.FlashMensagens;
+import com.example.procastinator.web.SessaoUsuario;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -22,8 +23,9 @@ public class DesculpaServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         FlashMensagens.consumir(req);
-        req.setAttribute("desculpas", dao.listarDesculpas());
-        req.setAttribute("tarefasSelect", tarefaDao.listarTodos());
+        Integer usuarioId = SessaoUsuario.obterId(req);
+        req.setAttribute("desculpas", dao.listarDesculpas(usuarioId));
+        req.setAttribute("tarefasSelect", tarefaDao.listarPorUsuario(usuarioId));
         req.setAttribute("navAtivo", "desculpas");
         req.getRequestDispatcher(VIEW).forward(req, resp);
     }
@@ -35,11 +37,12 @@ public class DesculpaServlet extends HttpServlet {
         String base = req.getContextPath() + "/desculpas";
         var session = req.getSession();
 
+        Integer usuarioId = SessaoUsuario.obterId(req);
         try {
             switch (acao) {
-                case "criar" -> criar(req);
-                case "atualizar" -> atualizar(req);
-                case "excluir" -> excluir(req);
+                case "criar" -> criar(req, usuarioId);
+                case "atualizar" -> atualizar(req, usuarioId);
+                case "excluir" -> excluir(req, usuarioId);
                 default -> {
                     FlashMensagens.erro(session, "Acao invalida.");
                     resp.sendRedirect(base);
@@ -67,28 +70,30 @@ public class DesculpaServlet extends HttpServlet {
         resp.sendRedirect(base + "?t=" + t);
     }
 
-    private void criar(HttpServletRequest req) {
+    private void criar(HttpServletRequest req, Integer usuarioId) {
         String comentario = trim(req.getParameter("comentario"));
         if (comentario.isBlank()) {
             throw new IllegalArgumentException("comentario");
         }
-        dao.salvarDesculpa(parseIntOrNull(req.getParameter("tarefaId")), comentario, parseIntOrNull(req.getParameter("nivelEficacia")));
+        dao.salvarDesculpa(parseIntOrNull(req.getParameter("tarefaId")), comentario,
+                parseIntOrNull(req.getParameter("nivelEficacia")), usuarioId);
     }
 
-    private void atualizar(HttpServletRequest req) {
+    private void atualizar(HttpServletRequest req, Integer usuarioId) {
         Integer id = parseIntRequired(req.getParameter("id"));
         String comentario = trim(req.getParameter("comentario"));
         if (comentario.isBlank()) {
             throw new IllegalArgumentException("comentario");
         }
-        if (dao.atualizarDesculpa(id, parseIntOrNull(req.getParameter("tarefaId")), comentario, parseIntOrNull(req.getParameter("nivelEficacia"))) == null) {
+        if (dao.atualizarDesculpa(id, parseIntOrNull(req.getParameter("tarefaId")), comentario,
+                parseIntOrNull(req.getParameter("nivelEficacia")), usuarioId) == null) {
             throw new IllegalArgumentException("notfound");
         }
     }
 
-    private void excluir(HttpServletRequest req) {
+    private void excluir(HttpServletRequest req, Integer usuarioId) {
         Integer id = parseIntRequired(req.getParameter("id"));
-        if (!dao.excluirDesculpa(id)) {
+        if (!dao.excluirDesculpa(id, usuarioId)) {
             throw new IllegalArgumentException("notfound");
         }
     }
