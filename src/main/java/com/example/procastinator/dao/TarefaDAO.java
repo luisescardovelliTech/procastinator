@@ -5,6 +5,7 @@ import com.example.procastinator.model.Historico;
 import com.example.procastinator.model.Recompensa;
 import com.example.procastinator.model.StatusTarefa;
 import com.example.procastinator.model.Tarefa;
+import com.example.procastinator.model.Usuario;
 import com.example.procastinator.model.Xingamento;
 import com.example.procastinator.util.HibernateUtil;
 import org.hibernate.Session;
@@ -19,49 +20,82 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
 
     @Override
     public void salvar(Tarefa obj) {
+        throw new UnsupportedOperationException("Use salvar(Tarefa, Integer usuarioId)");
+    }
+
+    public void salvar(Tarefa obj, Integer usuarioId) {
+        if (usuarioId == null) {
+            throw new IllegalArgumentException("usuarioId");
+        }
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             Transaction tx = session.beginTransaction();
             obj.setCategoria(resolveCategoria(session, obj.getCategoria()));
+            obj.setUsuario(session.getReference(Usuario.class, usuarioId));
             List<Xingamento> xingamentos = resolveXingamentos(session, obj.getXingamentos());
             if (xingamentos.isEmpty()) {
                 xingamentos = carregarXingamentosPadrao(session);
             }
             obj.setXingamentos(xingamentos);
             session.persist(obj);
-            registrarHistorico(session, obj, "CRIACAO");
+            registrarHistorico(session, obj, "CRIACAO", usuarioId);
             tx.commit();
         }
     }
 
     @Override
     public Tarefa buscarPorId(Integer id) {
+        throw new UnsupportedOperationException("Use buscarPorId(Integer, Integer)");
+    }
+
+    public Tarefa buscarPorId(Integer id, Integer usuarioId) {
+        if (id == null || usuarioId == null) {
+            return null;
+        }
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.createQuery(
                             "select distinct t from Tarefa t " +
                                     "left join fetch t.categoria " +
-                                    "left join fetch t.xingamentos where t.id = :id", Tarefa.class)
+                                    "left join fetch t.xingamentos " +
+                                    "where t.id = :id and t.usuario.id = :usuarioId", Tarefa.class)
                     .setParameter("id", id)
+                    .setParameter("usuarioId", usuarioId)
                     .uniqueResult();
         }
     }
 
     @Override
     public List<Tarefa> listarTodos() {
+        throw new UnsupportedOperationException("Use listarPorUsuario(Integer)");
+    }
+
+    public List<Tarefa> listarPorUsuario(Integer usuarioId) {
+        if (usuarioId == null) {
+            return List.of();
+        }
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.createQuery(
                             "select distinct t from Tarefa t " +
                                     "left join fetch t.categoria " +
                                     "left join fetch t.xingamentos " +
+                                    "where t.usuario.id = :usuarioId " +
                                     "order by t.id desc", Tarefa.class)
+                    .setParameter("usuarioId", usuarioId)
                     .list();
         }
     }
 
     @Override
     public void atualizar(Tarefa obj) {
+        throw new UnsupportedOperationException("Use atualizar(Tarefa, Integer usuarioId)");
+    }
+
+    public void atualizar(Tarefa obj, Integer usuarioId) {
+        if (usuarioId == null || obj.getId() == null) {
+            return;
+        }
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             Transaction tx = session.beginTransaction();
-            Tarefa atual = session.find(Tarefa.class, obj.getId());
+            Tarefa atual = buscarTarefaDoUsuario(session, obj.getId(), usuarioId);
             if (atual != null) {
                 StatusTarefa statusAnterior = atual.getStatus();
                 if (obj.getTitulo() != null) {
@@ -83,7 +117,7 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
                     atual.setXingamentos(resolveXingamentos(session, obj.getXingamentos()));
                 }
                 session.merge(atual);
-                registrarHistorico(session, atual, "ATUALIZACAO");
+                registrarHistorico(session, atual, "ATUALIZACAO", usuarioId);
                 registrarRecompensaPorStatus(session, atual, statusAnterior, atual.getStatus());
             }
             tx.commit();
@@ -92,10 +126,17 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
 
     @Override
     public void deletar(Integer id) {
+        throw new UnsupportedOperationException("Use deletar(Integer, Integer)");
+    }
+
+    public void deletar(Integer id, Integer usuarioId) {
+        if (id == null || usuarioId == null) {
+            return;
+        }
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             Transaction tx = session.beginTransaction();
             try {
-                Tarefa tarefa = session.find(Tarefa.class, id);
+                Tarefa tarefa = buscarTarefaDoUsuario(session, id, usuarioId);
                 if (tarefa != null) {
                     session.createMutationQuery(
                                     "update Historico h set h.tarefa = null where h.tarefa.id = :id")
@@ -108,7 +149,7 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
                     session.createNativeQuery("delete from tarefa_xingamento where id_tarefa = :id")
                             .setParameter("id", id)
                             .executeUpdate();
-                    registrarHistorico(session, null, "EXCLUSAO");
+                    registrarHistorico(session, tarefa, "EXCLUSAO", usuarioId);
                     session.remove(tarefa);
                 }
                 tx.commit();
@@ -121,19 +162,30 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
         }
     }
 
-    public void atualizarStatus(Integer id, StatusTarefa status) {
+    public void atualizarStatus(Integer id, StatusTarefa status, Integer usuarioId) {
+        if (id == null || usuarioId == null) {
+            return;
+        }
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             Transaction tx = session.beginTransaction();
-            Tarefa tarefa = session.find(Tarefa.class, id);
+            Tarefa tarefa = buscarTarefaDoUsuario(session, id, usuarioId);
             if (tarefa != null) {
                 StatusTarefa statusAnterior = tarefa.getStatus();
                 tarefa.setStatus(status);
                 session.merge(tarefa);
-                registrarHistorico(session, tarefa, "STATUS");
+                registrarHistorico(session, tarefa, "STATUS", usuarioId);
                 registrarRecompensaPorStatus(session, tarefa, statusAnterior, status);
             }
             tx.commit();
         }
+    }
+
+    private Tarefa buscarTarefaDoUsuario(Session session, Integer id, Integer usuarioId) {
+        return session.createQuery(
+                        "from Tarefa t where t.id = :id and t.usuario.id = :usuarioId", Tarefa.class)
+                .setParameter("id", id)
+                .setParameter("usuarioId", usuarioId)
+                .uniqueResult();
     }
 
     private void registrarRecompensaPorStatus(Session session, Tarefa tarefa, StatusTarefa anterior, StatusTarefa novo) {
@@ -242,11 +294,14 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
         return padrao.isEmpty() ? cadastrados : padrao;
     }
 
-    private void registrarHistorico(Session session, Tarefa tarefa, String acao) {
+    private void registrarHistorico(Session session, Tarefa tarefa, String acao, Integer usuarioId) {
         Historico historico = new Historico();
         historico.setAcao(acao);
         historico.setDataHora(LocalDateTime.now());
         historico.setTarefa(tarefa);
+        if (usuarioId != null) {
+            historico.setUsuario(session.getReference(Usuario.class, usuarioId));
+        }
         session.persist(historico);
     }
 }

@@ -42,4 +42,8 @@ public class Historico {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_tarefa")
     private Tarefa tarefa;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_usuario")
+    private Usuario usuario;
 }

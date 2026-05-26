@@ -4,6 +4,7 @@ import com.example.procastinator.dao.RecompensaDAO;
 import com.example.procastinator.dao.TarefaDAO;
 import com.example.procastinator.report.RelatorioCulpaPdfService;
 import com.example.procastinator.web.EstatisticasComputador;
+import com.example.procastinator.web.SessaoUsuario;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,9 +28,10 @@ public class EstatisticasPdfServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
+            Integer usuarioId = SessaoUsuario.obterId(req);
             var dashboard = EstatisticasComputador.build(
-                    tarefaDao.listarTodos(),
-                    recompensaDao.listarTodos()
+                    tarefaDao.listarPorUsuario(usuarioId),
+                    recompensaDao.listarPorUsuario(usuarioId)
             );
 
             byte[] pdf = relatorioService.gerarPdf(dashboard);

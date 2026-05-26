@@ -53,6 +53,10 @@ public class Tarefa {
     @JoinColumn(name = "id_categoria")
     private Categoria categoria;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_usuario")
+    private Usuario usuario;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "tarefa_xingamento",

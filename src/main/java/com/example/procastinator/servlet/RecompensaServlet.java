@@ -4,6 +4,7 @@ import com.example.procastinator.dao.RecompensaDAO;
 import com.example.procastinator.model.Recompensa;
 import com.example.procastinator.model.Tarefa;
 import com.example.procastinator.web.FlashMensagens;
+import com.example.procastinator.web.SessaoUsuario;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -23,7 +24,8 @@ public class RecompensaServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         FlashMensagens.consumir(req);
-        List<Recompensa> lista = dao.listarTodos();
+        Integer usuarioId = SessaoUsuario.obterId(req);
+        List<Recompensa> lista = dao.listarPorUsuario(usuarioId);
         req.setAttribute("recompensas", lista);
         req.setAttribute("totalPontos", lista.stream().mapToInt(r -> r.getPontos() != null ? r.getPontos() : 0).sum());
         req.setAttribute("navAtivo", "recompensas");
@@ -32,7 +34,7 @@ public class RecompensaServlet extends HttpServlet {
         if (detalhesId != null && !detalhesId.isBlank()) {
             try {
                 int id = Integer.parseInt(detalhesId.trim());
-                Recompensa recompensa = dao.buscarPorId(id);
+                Recompensa recompensa = dao.buscarPorId(id, usuarioId);
                 if (recompensa != null) {
                     Integer tarefaId = recompensa.getTarefa() != null ? recompensa.getTarefa().getId() : null;
                     Tarefa tarefa = recompensa.getTarefa();
