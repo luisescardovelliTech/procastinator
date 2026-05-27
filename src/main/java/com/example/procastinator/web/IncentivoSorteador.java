@@ -12,17 +12,17 @@ public final class IncentivoSorteador {
 
     private final XingamentoDAO dao = new XingamentoDAO();
 
-    public Xingamento sortearElogio() {
-        return sortearPorTipo("ELOGIO", null);
+    public Xingamento sortearElogio(Integer usuarioId) {
+        return sortearPorTipo("ELOGIO", null, usuarioId);
     }
 
-    public Xingamento sortearXingamento(Integer ultimoId) {
-        return sortearPorTipo("XINGAMENTO", ultimoId);
+    public Xingamento sortearXingamento(Integer ultimoId, Integer usuarioId) {
+        return sortearPorTipo("XINGAMENTO", ultimoId, usuarioId);
     }
 
-    private Xingamento sortearPorTipo(String tipo, Integer ultimoId) {
+    private Xingamento sortearPorTipo(String tipo, Integer ultimoId, Integer usuarioId) {
         List<Xingamento> candidatos = new ArrayList<>();
-        for (Xingamento item : dao.listarTodos()) {
+        for (Xingamento item : dao.listarPorUsuario(usuarioId)) {
             String t = item.getTipo() == null ? "" : item.getTipo().toUpperCase(Locale.ROOT);
             if (tipo.equals(t)) {
                 candidatos.add(item);

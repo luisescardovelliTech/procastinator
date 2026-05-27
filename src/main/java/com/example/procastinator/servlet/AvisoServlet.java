@@ -2,6 +2,7 @@ package com.example.procastinator.servlet;
 
 import com.example.procastinator.dao.XingamentoDAO;
 import com.example.procastinator.web.FlashMensagens;
+import com.example.procastinator.web.SessaoUsuario;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -20,7 +21,8 @@ public class AvisoServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         FlashMensagens.consumir(req);
-        req.setAttribute("avisos", dao.listarTodos());
+        Integer usuarioId = SessaoUsuario.obterId(req);
+        req.setAttribute("avisos", dao.listarPorUsuario(usuarioId));
         req.setAttribute("navAtivo", "avisos");
         req.getRequestDispatcher(VIEW).forward(req, resp);
     }
@@ -31,21 +33,22 @@ public class AvisoServlet extends HttpServlet {
         String acao = trim(req.getParameter("acao"));
         String base = req.getContextPath() + "/avisos";
         var session = req.getSession();
+        Integer usuarioId = SessaoUsuario.obterId(req);
 
         try {
             switch (acao) {
                 case "criar" -> {
-                    criar(req);
+                    criar(req, usuarioId);
                     FlashMensagens.toast(session, "Frase cadastrada com sucesso.");
                     resp.sendRedirect(base + "?t=1");
                 }
                 case "atualizar" -> {
-                    atualizar(req);
+                    atualizar(req, usuarioId);
                     FlashMensagens.toast(session, "Frase atualizada com sucesso.");
                     resp.sendRedirect(base + "?t=2");
                 }
                 case "excluir" -> {
-                    if (!excluir(req, session)) {
+                    if (!excluir(req, session, usuarioId)) {
                         resp.sendRedirect(base);
                         return;
                     }
@@ -61,32 +64,31 @@ public class AvisoServlet extends HttpServlet {
             FlashMensagens.erro(session, "Nao foi possivel concluir a acao.");
             resp.sendRedirect(base);
         }
-        return;
     }
 
-    private void criar(HttpServletRequest req) {
+    private void criar(HttpServletRequest req, Integer usuarioId) {
         String mensagem = trim(req.getParameter("mensagem"));
         if (mensagem.isBlank()) {
             throw new IllegalArgumentException("mensagem");
         }
-        dao.salvarAviso(mensagem, trim(req.getParameter("tipo")));
+        dao.salvarAviso(mensagem, trim(req.getParameter("tipo")), usuarioId);
     }
 
-    private void atualizar(HttpServletRequest req) {
+    private void atualizar(HttpServletRequest req, Integer usuarioId) {
         Integer id = parseIntRequired(req.getParameter("id"));
         String mensagem = trim(req.getParameter("mensagem"));
         if (mensagem.isBlank()) {
             throw new IllegalArgumentException("mensagem");
         }
         String tipo = trim(req.getParameter("tipo"));
-        if (dao.atualizarAviso(id, mensagem, tipo.isEmpty() ? "XINGAMENTO" : tipo) == null) {
+        if (dao.atualizarAviso(id, mensagem, tipo.isEmpty() ? "XINGAMENTO" : tipo, usuarioId) == null) {
             throw new IllegalArgumentException("notfound");
         }
     }
 
-    private boolean excluir(HttpServletRequest req, jakarta.servlet.http.HttpSession session) {
+    private boolean excluir(HttpServletRequest req, jakarta.servlet.http.HttpSession session, Integer usuarioId) {
         Integer id = parseIntRequired(req.getParameter("id"));
-        XingamentoDAO.ExclusaoAvisoResultado r = dao.excluirAviso(id);
+        XingamentoDAO.ExclusaoAvisoResultado r = dao.excluirAviso(id, usuarioId);
         if (r == XingamentoDAO.ExclusaoAvisoResultado.NAO_ENCONTRADO) {
             throw new IllegalArgumentException("notfound");
         }

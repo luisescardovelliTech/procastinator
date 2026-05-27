@@ -132,7 +132,7 @@ public class TarefaServlet extends HttpServlet {
         tarefa.setDataPrazo(prazo);
         tarefa.setCategoria(parseCategoriaNome(trim(req.getParameter("categoria"))));
 
-        Xingamento elogio = sorteador.sortearElogio();
+        Xingamento elogio = sorteador.sortearElogio(usuarioId);
         if (elogio != null) {
             tarefa.setXingamentos(List.of(elogio));
         }
@@ -177,7 +177,7 @@ public class TarefaServlet extends HttpServlet {
 
         if (status == StatusTarefa.ESPERANDO || status == StatusTarefa.QUASE_FIZ) {
             Integer ultimoId = (Integer) session.getAttribute("ultimoXingamentoId");
-            Xingamento xingamento = sorteador.sortearXingamento(ultimoId);
+            Xingamento xingamento = sorteador.sortearXingamento(ultimoId, usuarioId);
             if (xingamento != null) {
                 Tarefa tarefa = new Tarefa();
                 tarefa.setId(id);
