@@ -1,5 +1,6 @@
 package com.example.procastinator.dao;
 
+import com.example.procastinator.model.Usuario;
 import com.example.procastinator.model.Xingamento;
 import com.example.procastinator.util.HibernateUtil;
 import org.hibernate.Session;
@@ -22,28 +23,48 @@ public class XingamentoDAO {
         }
     }
 
+    public List<Xingamento> listarPorUsuario(Integer usuarioId) {
+        if (usuarioId == null) {
+            return List.of();
+        }
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery(
+                    "from Xingamento x where x.usuario.id = :usuarioId order by x.id desc",
+                    Xingamento.class)
+                    .setParameter("usuarioId", usuarioId)
+                    .list();
+        }
+    }
+
     public Xingamento buscarPorId(Integer id) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.find(Xingamento.class, id);
         }
     }
 
-    public Xingamento salvarAviso(String mensagem, String tipo) {
+    public Xingamento salvarAviso(String mensagem, String tipo, Integer usuarioId) {
+        if (usuarioId == null) {
+            throw new IllegalArgumentException("usuarioId");
+        }
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             Transaction tx = session.beginTransaction();
             Xingamento aviso = new Xingamento();
             aviso.setMensagem(mensagem);
             aviso.setTipo(normalizarTipo(tipo));
+            aviso.setUsuario(session.getReference(Usuario.class, usuarioId));
             session.persist(aviso);
             tx.commit();
             return session.find(Xingamento.class, aviso.getId());
         }
     }
 
-    public Xingamento atualizarAviso(Integer id, String mensagem, String tipo) {
+    public Xingamento atualizarAviso(Integer id, String mensagem, String tipo, Integer usuarioId) {
+        if (usuarioId == null) {
+            return null;
+        }
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             Transaction tx = session.beginTransaction();
-            Xingamento aviso = session.find(Xingamento.class, id);
+            Xingamento aviso = buscarAvisoPorUsuario(session, id, usuarioId);
             if (aviso == null) {
                 tx.rollback();
                 return null;
@@ -56,10 +77,13 @@ public class XingamentoDAO {
         }
     }
 
-    public ExclusaoAvisoResultado excluirAviso(Integer id) {
+    public ExclusaoAvisoResultado excluirAviso(Integer id, Integer usuarioId) {
+        if (usuarioId == null) {
+            return ExclusaoAvisoResultado.NAO_ENCONTRADO;
+        }
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             Transaction tx = session.beginTransaction();
-            Xingamento aviso = session.find(Xingamento.class, id);
+            Xingamento aviso = buscarAvisoPorUsuario(session, id, usuarioId);
             if (aviso == null) {
                 tx.rollback();
                 return ExclusaoAvisoResultado.NAO_ENCONTRADO;
@@ -79,6 +103,15 @@ public class XingamentoDAO {
             tx.commit();
             return ExclusaoAvisoResultado.REMOVIDO;
         }
+    }
+
+    private Xingamento buscarAvisoPorUsuario(Session session, Integer id, Integer usuarioId) {
+        return session.createQuery(
+                        "from Xingamento x where x.id = :id and x.usuario.id = :usuarioId",
+                        Xingamento.class)
+                .setParameter("id", id)
+                .setParameter("usuarioId", usuarioId)
+                .uniqueResult();
     }
 
     private String normalizarTipo(String tipo) {

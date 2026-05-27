@@ -33,7 +33,7 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
             obj.setUsuario(session.getReference(Usuario.class, usuarioId));
             List<Xingamento> xingamentos = resolveXingamentos(session, obj.getXingamentos());
             if (xingamentos.isEmpty()) {
-                xingamentos = carregarXingamentosPadrao(session);
+                xingamentos = carregarXingamentosPadrao(session, usuarioId);
             }
             obj.setXingamentos(xingamentos);
             session.persist(obj);
@@ -118,7 +118,7 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
                 }
                 session.merge(atual);
                 registrarHistorico(session, atual, "ATUALIZACAO", usuarioId);
-                registrarRecompensaPorStatus(session, atual, statusAnterior, atual.getStatus());
+                registrarRecompensaPorStatus(session, atual, statusAnterior, atual.getStatus(), usuarioId);
             }
             tx.commit();
         }
@@ -174,7 +174,7 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
                 tarefa.setStatus(status);
                 session.merge(tarefa);
                 registrarHistorico(session, tarefa, "STATUS", usuarioId);
-                registrarRecompensaPorStatus(session, tarefa, statusAnterior, status);
+                registrarRecompensaPorStatus(session, tarefa, statusAnterior, status, usuarioId);
             }
             tx.commit();
         }
@@ -188,7 +188,7 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
                 .uniqueResult();
     }
 
-    private void registrarRecompensaPorStatus(Session session, Tarefa tarefa, StatusTarefa anterior, StatusTarefa novo) {
+    private void registrarRecompensaPorStatus(Session session, Tarefa tarefa, StatusTarefa anterior, StatusTarefa novo, Integer usuarioId) {
         if (tarefa == null || novo == null || novo == anterior) {
             return;
         }
@@ -211,6 +211,9 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
         recompensa.setPontos(pontos);
         recompensa.setDataConquista(LocalDateTime.now());
         recompensa.setTarefa(tarefa);
+        if (usuarioId != null) {
+            recompensa.setUsuario(session.getReference(Usuario.class, usuarioId));
+        }
         session.persist(recompensa);
     }
 
@@ -276,9 +279,10 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
         return resolved;
     }
 
-    private List<Xingamento> carregarXingamentosPadrao(Session session) {
+    private List<Xingamento> carregarXingamentosPadrao(Session session, Integer usuarioId) {
         List<Xingamento> cadastrados = session.createQuery(
-                        "from Xingamento x order by x.id", Xingamento.class)
+                        "from Xingamento x where x.usuario.id = :usuarioId order by x.id", Xingamento.class)
+                .setParameter("usuarioId", usuarioId)
                 .list();
         if (cadastrados.isEmpty()) {
             return cadastrados;

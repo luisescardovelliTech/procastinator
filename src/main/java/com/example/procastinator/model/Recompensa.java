@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -40,6 +41,10 @@ public class Recompensa {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_tarefa")
     private Tarefa tarefa;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_usuario")
+    private Usuario usuario;
 }
 
 

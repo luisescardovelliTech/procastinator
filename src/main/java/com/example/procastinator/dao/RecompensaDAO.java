@@ -22,9 +22,10 @@ public class RecompensaDAO {
         }
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.createQuery(
-                            "select r from com.example.procastinator.model.Recompensa r " +
+                            "select distinct r from com.example.procastinator.model.Recompensa r " +
                                     "left join fetch r.tarefa t " +
-                                    "where t.usuario.id = :usuarioId " +
+                                    "left join fetch r.usuario u " +
+                                    "where (coalesce(u.id, -1) = :usuarioId or coalesce(t.usuario.id, -1) = :usuarioId) " +
                                     "order by r.dataConquista desc, r.id desc",
                             Recompensa.class)
                     .setParameter("usuarioId", usuarioId)
@@ -44,7 +45,8 @@ public class RecompensaDAO {
             return session.createQuery(
                             "select r from com.example.procastinator.model.Recompensa r " +
                                     "left join fetch r.tarefa t " +
-                                    "where r.id = :id and t.usuario.id = :usuarioId",
+                                    "left join fetch r.usuario u " +
+                                    "where r.id = :id and (coalesce(u.id, -1) = :usuarioId or coalesce(t.usuario.id, -1) = :usuarioId)",
                             Recompensa.class)
                     .setParameter("id", id)
                     .setParameter("usuarioId", usuarioId)
@@ -78,6 +80,7 @@ public class RecompensaDAO {
             recompensa.setTitulo(tituloNormalizado);
             recompensa.setDescricao(descricaoNormalizada);
             recompensa.setTarefa(tarefa);
+            recompensa.setUsuario(tarefa != null ? tarefa.getUsuario() : null);
             recompensa.setPontos(calcularPontos(tarefa, tituloNormalizado, descricaoNormalizada));
             recompensa.setDataConquista(LocalDateTime.now());
             session.persist(recompensa);
@@ -104,6 +107,7 @@ public class RecompensaDAO {
             recompensa.setTitulo(tituloNormalizado);
             recompensa.setDescricao(descricaoNormalizada);
             recompensa.setTarefa(tarefa);
+            recompensa.setUsuario(tarefa != null ? tarefa.getUsuario() : recompensa.getUsuario());
             recompensa.setPontos(calcularPontos(tarefa, tituloNormalizado, descricaoNormalizada));
 
             tx.commit();
