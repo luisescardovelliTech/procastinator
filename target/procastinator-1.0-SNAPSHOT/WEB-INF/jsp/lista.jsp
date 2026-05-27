@@ -29,6 +29,7 @@
                     <div class="col-12 col-lg-4">
                         <div class="kanban-column">
                             <c:forEach var="t" items="${backlog}">
+                                <c:set var="tarefa" scope="request" value="${t}"/>
                                 <jsp:include page="fragments/task-card.jsp"/>
                             </c:forEach>
                         </div>
@@ -38,6 +39,7 @@
                     <div class="col-12 col-lg-4">
                         <div class="kanban-column">
                             <c:forEach var="t" items="${esperando}">
+                                <c:set var="tarefa" scope="request" value="${t}"/>
                                 <jsp:include page="fragments/task-card.jsp"/>
                             </c:forEach>
                         </div>
@@ -45,6 +47,7 @@
                     <div class="col-12 col-lg-4">
                         <div class="kanban-column">
                             <c:forEach var="t" items="${quaseFiz}">
+                                <c:set var="tarefa" scope="request" value="${t}"/>
                                 <jsp:include page="fragments/task-card.jsp"/>
                             </c:forEach>
                         </div>
