@@ -6,56 +6,156 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Procrastinator | Entrar</title>
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth.css">
+
+    <style>
+        body.auth-page{
+            background: white;
+            min-height: 100vh;
+        }
+
+        .login-card{
+            border-radius: 20px;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .login-card .card-body{
+            padding: 40px;
+        }
+
+        .logo-title{
+            font-size: 2rem;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .subtitle{
+            color: #6b7280;
+            font-size: 0.95rem;
+        }
+
+        .form-control{
+            height: 50px;
+            border-radius: 12px;
+        }
+
+        .btn-login{
+            height: 50px;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .btn-login:hover{
+            transform: translateY(-2px);
+        }
+
+        .register-link a{
+            text-decoration: none;
+            font-weight: 600;
+        }
+    </style>
 </head>
+
 <body class="auth-page">
+
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
 
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-12 col-md-7 col-lg-5">
-            <div class="card shadow-sm border-0">
-                <div class="card-body p-4 p-md-5">
-                    <h1 class="h3 fw-bold text-center mb-1">Procrastinator</h1>
-                    <p class="text-center text-secondary mb-4">Entre para continuar procrastinando com responsabilidade.</p>
+<div class="container min-vh-100 d-flex align-items-center justify-content-center">
 
-                    <c:if test="${not empty flashErro}">
-                        <div class="alert alert-danger py-2" role="alert"><c:out value="${flashErro}"/></div>
-                    </c:if>
-                    <c:if test="${not empty flashToast}">
-                        <div class="alert alert-success py-2" role="alert"><c:out value="${flashToast}"/></div>
-                    </c:if>
+    <div class="col-12 col-sm-10 col-md-7 col-lg-5 col-xl-4">
 
-                    <form method="post" action="${ctx}/login" class="vstack gap-3">
-                        <c:if test="${not empty param.redirect}">
-                            <input type="hidden" name="redirect" value="<c:out value='${param.redirect}'/>">
-                        </c:if>
-                        <div>
-                            <label for="email" class="form-label">E-mail</label>
-                            <input type="email" class="form-control" id="email" name="email" required autocomplete="email">
-                        </div>
-                        <div>
-                            <label for="senha" class="form-label">Senha</label>
-                            <input type="password" class="form-control" id="senha" name="senha" required minlength="6" autocomplete="current-password">
-                        </div>
-                        <button type="submit" class="btn btn-dark w-100">Entrar</button>
-                    </form>
+        <div class="card login-card shadow-lg border-0">
 
-                    <p class="text-center text-secondary mt-4 mb-0 small">
-                        Ainda nao tem conta?
-                        <a href="${ctx}/registro">Cadastre-se</a>
+            <div class="card-body">
+
+                <div class="text-center mb-4">
+                    <h1 class="logo-title mb-2">Procrastinator</h1>
+
+                    <p class="subtitle mb-0">
+                        Entre para continuar procrastinando com responsabilidade.
                     </p>
                 </div>
+
+                <c:if test="${not empty flashErro}">
+                    <div class="alert alert-danger py-2" role="alert">
+                        <c:out value="${flashErro}"/>
+                    </div>
+                </c:if>
+
+                <c:if test="${not empty flashToast}">
+                    <div class="alert alert-success py-2" role="alert">
+                        <c:out value="${flashToast}"/>
+                    </div>
+                </c:if>
+
+                <form method="post" action="${ctx}/login" class="vstack gap-3">
+
+                    <c:if test="${not empty param.redirect}">
+                        <input type="hidden" name="redirect"
+                               value="<c:out value='${param.redirect}'/>">
+                    </c:if>
+
+                    <div>
+                        <label for="email" class="form-label fw-semibold">
+                            E-mail
+                        </label>
+
+                        <input
+                                type="email"
+                                class="form-control"
+                                id="email"
+                                name="email"
+                                required
+                                autocomplete="email"
+                                placeholder="Digite seu e-mail">
+                    </div>
+
+                    <div>
+                        <label for="senha" class="form-label fw-semibold">
+                            Senha
+                        </label>
+
+                        <input
+                                type="password"
+                                class="form-control"
+                                id="senha"
+                                name="senha"
+                                required
+                                minlength="6"
+                                autocomplete="current-password"
+                                placeholder="Digite sua senha">
+                    </div>
+
+                    <button type="submit" class="btn btn-dark btn-login w-100">
+                        Entrar
+                    </button>
+
+                </form>
+
+                <p class="text-center text-secondary mt-4 mb-0 small register-link">
+                    Ainda não tem conta?
+                    <a href="${ctx}/registro">Cadastre-se</a>
+                </p>
+
             </div>
         </div>
     </div>
 </div>
 
-<span id="server-flash-toast" class="d-none"><c:out value="${flashToast}"/></span>
-<span id="server-flash-erro" class="d-none"><c:out value="${flashErro}"/></span>
+<span id="server-flash-toast" class="d-none">
+    <c:out value="${flashToast}"/>
+</span>
+
+<span id="server-flash-erro" class="d-none">
+    <c:out value="${flashErro}"/>
+</span>
+
 <script src="${pageContext.request.contextPath}/js/jquery-4.0.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="${pageContext.request.contextPath}/js/app.js"></script>
+
 </body>
 </html>
