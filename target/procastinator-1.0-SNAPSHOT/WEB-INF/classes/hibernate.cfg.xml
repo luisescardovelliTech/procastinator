@@ -20,5 +20,7 @@
         <mapping class="com.example.procastinator.model.Tarefa"/>
         <mapping class="com.example.procastinator.model.Historico"/>
         <mapping class="com.example.procastinator.model.Recompensa"/>
+        <mapping class="com.example.procastinator.model.Equipe"/>
+        <mapping class="com.example.procastinator.model.MembroEquipe"/>
     </session-factory>
 </hibernate-configuration>
