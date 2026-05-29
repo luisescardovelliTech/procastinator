@@ -7,6 +7,8 @@
            href="${ctx}/estatisticas">Estatisticas de Culpa</a>
         <a class="list-group-item list-group-item-action ${navAtivo == 'lista' ? 'bg-white fw-semibold rounded' : 'bg-transparent text-secondary'}"
            href="${ctx}/tarefas">Lista do Nao Fazer</a>
+        <a class="list-group-item list-group-item-action ${navAtivo == 'equipes' ? 'bg-white fw-semibold rounded' : 'bg-transparent text-secondary'}"
+           href="${ctx}/equipes">Equipes</a>
         <a class="list-group-item list-group-item-action ${navAtivo == 'timer' ? 'bg-white fw-semibold rounded' : 'bg-transparent text-secondary'}"
            href="${ctx}/timer">Timer de Descanso</a>
         <a class="list-group-item list-group-item-action ${navAtivo == 'desculpas' ? 'bg-white fw-semibold rounded' : 'bg-transparent text-secondary'}"

@@ -1,0 +1,46 @@
+body.auth-page{
+    background: white;
+    min-height: 100vh;
+}
+
+.login-card{
+    border-radius: 20px;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+}
+
+.login-card .card-body{
+    padding: 40px;
+}
+
+.logo-title{
+    font-size: 2rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.subtitle{
+    color: #6b7280;
+    font-size: 0.95rem;
+}
+
+.form-control{
+    height: 50px;
+    border-radius: 12px;
+}
+
+.btn-login{
+    height: 50px;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: 0.2s;
+}
+
+.btn-login:hover{
+    transform: translateY(-2px);
+}
+
+.register-link a{
+    text-decoration: none;
+    font-weight: 600;
+}

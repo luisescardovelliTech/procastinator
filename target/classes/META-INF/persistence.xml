@@ -4,6 +4,13 @@
              xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_2.xsd"
              version="3.2">
     <persistence-unit name="default">
-
+        <class>com.example.procastinator.model.Usuario</class>
+        <class>com.example.procastinator.model.Tarefa</class>
+        <class>com.example.procastinator.model.Categoria</class>
+        <class>com.example.procastinator.model.Xingamento</class>
+        <class>com.example.procastinator.model.Historico</class>
+        <class>com.example.procastinator.model.Recompensa</class>
+        <class>com.example.procastinator.model.Equipe</class>
+        <class>com.example.procastinator.model.MembroEquipe</class>
     </persistence-unit>
 </persistence>

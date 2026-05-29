@@ -32,7 +32,6 @@ public class Tarefa {
     @Column(name = "id_tarefa")
     private Integer id;
 
-
     @Column(length = 100)
     private String titulo;
 
@@ -56,6 +55,14 @@ public class Tarefa {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_usuario")
     private Usuario usuario;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_equipe")
+    private Equipe equipe;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_responsavel")
+    private Usuario responsavel;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

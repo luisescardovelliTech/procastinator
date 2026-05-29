@@ -1,3 +1,4 @@
+
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
@@ -9,6 +10,8 @@
                href="${ctx}/estatisticas">Estatisticas de Culpa</a>
             <a class="nav-link btn btn-link p-0 ${navAtivo == 'lista' ? 'fw-bold border-bottom border-dark' : ''}"
                href="${ctx}/tarefas">Lista do Nao Fazer</a>
+            <a class="nav-link btn btn-link p-0 ${navAtivo == 'equipes' ? 'fw-bold border-bottom border-dark' : ''}"
+               href="${ctx}/equipes">Equipes</a>
             <a class="nav-link btn btn-link p-0 ${navAtivo == 'timer' ? 'fw-bold border-bottom border-dark' : ''}"
                href="${ctx}/timer">Timer de Descanso</a>
             <a class="nav-link btn btn-link p-0 ${navAtivo == 'desculpas' ? 'fw-bold border-bottom border-dark' : ''}"

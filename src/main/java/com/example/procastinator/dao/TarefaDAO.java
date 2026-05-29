@@ -98,24 +98,12 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
             Tarefa atual = buscarTarefaDoUsuario(session, obj.getId(), usuarioId);
             if (atual != null) {
                 StatusTarefa statusAnterior = atual.getStatus();
-                if (obj.getTitulo() != null) {
-                    atual.setTitulo(obj.getTitulo());
-                }
-                if (obj.getDescricao() != null) {
-                    atual.setDescricao(obj.getDescricao());
-                }
-                if (obj.getStatus() != null) {
-                    atual.setStatus(obj.getStatus());
-                }
-                if (obj.getDataPrazo() != null) {
-                    atual.setDataPrazo(obj.getDataPrazo());
-                }
-                if (obj.getCategoria() != null) {
-                    atual.setCategoria(resolveCategoria(session, obj.getCategoria()));
-                }
-                if (obj.getXingamentos() != null) {
-                    atual.setXingamentos(resolveXingamentos(session, obj.getXingamentos()));
-                }
+                if (obj.getTitulo() != null) atual.setTitulo(obj.getTitulo());
+                if (obj.getDescricao() != null) atual.setDescricao(obj.getDescricao());
+                if (obj.getStatus() != null) atual.setStatus(obj.getStatus());
+                if (obj.getDataPrazo() != null) atual.setDataPrazo(obj.getDataPrazo());
+                if (obj.getCategoria() != null) atual.setCategoria(resolveCategoria(session, obj.getCategoria()));
+                if (obj.getXingamentos() != null) atual.setXingamentos(resolveXingamentos(session, obj.getXingamentos()));
                 session.merge(atual);
                 registrarHistorico(session, atual, "ATUALIZACAO", usuarioId);
                 registrarRecompensaPorStatus(session, atual, statusAnterior, atual.getStatus(), usuarioId);
@@ -140,32 +128,25 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
                 if (tarefa != null) {
                     session.createMutationQuery(
                                     "update Historico h set h.tarefa = null where h.tarefa.id = :id")
-                            .setParameter("id", id)
-                            .executeUpdate();
+                            .setParameter("id", id).executeUpdate();
                     session.createMutationQuery(
                                     "update Recompensa r set r.tarefa = null where r.tarefa.id = :id")
-                            .setParameter("id", id)
-                            .executeUpdate();
+                            .setParameter("id", id).executeUpdate();
                     session.createNativeQuery("delete from tarefa_xingamento where id_tarefa = :id")
-                            .setParameter("id", id)
-                            .executeUpdate();
+                            .setParameter("id", id).executeUpdate();
                     registrarHistorico(session, tarefa, "EXCLUSAO", usuarioId);
                     session.remove(tarefa);
                 }
                 tx.commit();
             } catch (RuntimeException ex) {
-                if (tx != null && tx.isActive()) {
-                    tx.rollback();
-                }
+                if (tx != null && tx.isActive()) tx.rollback();
                 throw ex;
             }
         }
     }
 
     public void atualizarStatus(Integer id, StatusTarefa status, Integer usuarioId) {
-        if (id == null || usuarioId == null) {
-            return;
-        }
+        if (id == null || usuarioId == null) return;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             Transaction tx = session.beginTransaction();
             Tarefa tarefa = buscarTarefaDoUsuario(session, id, usuarioId);
@@ -180,6 +161,145 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
         }
     }
 
+    // --- métodos de equipe ---
+
+    public List<Tarefa> listarPorEquipe(Integer equipeId) {
+        if (equipeId == null) return List.of();
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery(
+                            "select distinct t from Tarefa t " +
+                                    "left join fetch t.categoria " +
+                                    "left join fetch t.responsavel " +
+                                    "left join fetch t.xingamentos " +
+                                    "where t.equipe.id = :eId " +
+                                    "order by t.id desc", Tarefa.class)
+                    .setParameter("eId", equipeId)
+                    .list();
+        }
+    }
+
+    public void salvarEquipe(Tarefa obj, Integer usuarioId, Integer equipeId, Integer responsavelId) {
+        if (usuarioId == null || equipeId == null) {
+            throw new IllegalArgumentException("usuarioId e equipeId sao obrigatorios");
+        }
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction tx = session.beginTransaction();
+            obj.setCategoria(resolveCategoria(session, obj.getCategoria()));
+            obj.setUsuario(session.getReference(Usuario.class, usuarioId));
+            obj.setEquipe(session.getReference(com.example.procastinator.model.Equipe.class, equipeId));
+            if (responsavelId != null) {
+                obj.setResponsavel(session.getReference(Usuario.class, responsavelId));
+            }
+            List<Xingamento> xingamentos = resolveXingamentos(session, obj.getXingamentos());
+            if (xingamentos.isEmpty()) {
+                xingamentos = carregarXingamentosPadrao(session, usuarioId);
+            }
+            obj.setXingamentos(xingamentos);
+            session.persist(obj);
+            registrarHistorico(session, obj, "CRIACAO", usuarioId);
+            tx.commit();
+        }
+    }
+
+    public void atualizarStatusEquipe(Integer tarefaId, StatusTarefa status, Integer equipeId) {
+        if (tarefaId == null || equipeId == null) return;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction tx = session.beginTransaction();
+            Tarefa tarefa = session.createQuery(
+                            "from Tarefa t where t.id = :id and t.equipe.id = :eId", Tarefa.class)
+                    .setParameter("id", tarefaId)
+                    .setParameter("eId", equipeId)
+                    .uniqueResult();
+            if (tarefa != null) {
+                tarefa.setStatus(status);
+                session.merge(tarefa);
+            }
+            tx.commit();
+        }
+    }
+
+    public void atribuirResponsavel(Integer tarefaId, Integer responsavelId, Integer equipeId) {
+        if (tarefaId == null || equipeId == null) return;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction tx = session.beginTransaction();
+            Tarefa tarefa = session.createQuery(
+                            "from Tarefa t where t.id = :id and t.equipe.id = :eId", Tarefa.class)
+                    .setParameter("id", tarefaId)
+                    .setParameter("eId", equipeId)
+                    .uniqueResult();
+            if (tarefa != null) {
+                tarefa.setResponsavel(responsavelId != null
+                        ? session.getReference(Usuario.class, responsavelId) : null);
+                session.merge(tarefa);
+            }
+            tx.commit();
+        }
+    }
+
+    /**
+     * Atualiza os dados de uma tarefa de equipe. Apenas o lider chama.
+     */
+    public void atualizarEquipe(Tarefa obj, Integer equipeId, Integer responsavelId) {
+        if (obj.getId() == null || equipeId == null) return;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction tx = session.beginTransaction();
+            Tarefa atual = session.createQuery(
+                            "from Tarefa t where t.id = :id and t.equipe.id = :eId", Tarefa.class)
+                    .setParameter("id", obj.getId())
+                    .setParameter("eId", equipeId)
+                    .uniqueResult();
+            if (atual != null) {
+                if (obj.getTitulo() != null && !obj.getTitulo().isBlank())
+                    atual.setTitulo(obj.getTitulo());
+                if (obj.getDescricao() != null)
+                    atual.setDescricao(obj.getDescricao());
+                if (obj.getStatus() != null)
+                    atual.setStatus(obj.getStatus());
+                if (obj.getDataPrazo() != null)
+                    atual.setDataPrazo(obj.getDataPrazo());
+                if (obj.getCategoria() != null)
+                    atual.setCategoria(resolveCategoria(session, obj.getCategoria()));
+                atual.setResponsavel(responsavelId != null
+                        ? session.getReference(Usuario.class, responsavelId) : null);
+                session.merge(atual);
+            }
+            tx.commit();
+        }
+    }
+    /**
+     * Exclui uma tarefa de equipe. Apenas o lider chama.
+     */
+    public void deletarEquipe(Integer tarefaId, Integer equipeId) {
+        if (tarefaId == null || equipeId == null) return;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction tx = session.beginTransaction();
+            try {
+                Tarefa tarefa = session.createQuery(
+                                "from Tarefa t where t.id = :id and t.equipe.id = :eId", Tarefa.class)
+                        .setParameter("id", tarefaId)
+                        .setParameter("eId", equipeId)
+                        .uniqueResult();
+                if (tarefa != null) {
+                    session.createMutationQuery(
+                                    "update Historico h set h.tarefa = null where h.tarefa.id = :id")
+                            .setParameter("id", tarefaId).executeUpdate();
+                    session.createMutationQuery(
+                                    "update Recompensa r set r.tarefa = null where r.tarefa.id = :id")
+                            .setParameter("id", tarefaId).executeUpdate();
+                    session.createNativeQuery("delete from tarefa_xingamento where id_tarefa = :id")
+                            .setParameter("id", tarefaId).executeUpdate();
+                    session.remove(tarefa);
+                }
+                tx.commit();
+            } catch (RuntimeException ex) {
+                if (tx != null && tx.isActive()) tx.rollback();
+                throw ex;
+            }
+        }
+    }
+
+    // --- helpers privados ---
+
     private Tarefa buscarTarefaDoUsuario(Session session, Integer id, Integer usuarioId) {
         return session.createQuery(
                         "from Tarefa t where t.id = :id and t.usuario.id = :usuarioId", Tarefa.class)
@@ -189,10 +309,7 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
     }
 
     private void registrarRecompensaPorStatus(Session session, Tarefa tarefa, StatusTarefa anterior, StatusTarefa novo, Integer usuarioId) {
-        if (tarefa == null || novo == null || novo == anterior) {
-            return;
-        }
-
+        if (tarefa == null || novo == null || novo == anterior) return;
         int pontos;
         String titulo;
         if (novo == StatusTarefa.ESPERANDO) {
@@ -204,7 +321,6 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
         } else {
             return;
         }
-
         Recompensa recompensa = new Recompensa();
         recompensa.setTitulo(titulo);
         recompensa.setDescricao("Movimentacao da tarefa: " + (tarefa.getTitulo() == null ? "Sem titulo" : tarefa.getTitulo()));
@@ -218,23 +334,17 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
     }
 
     private Categoria resolveCategoria(Session session, Categoria categoria) {
-        if (categoria == null) {
-            return ensureDefaultCategoria(session);
-        }
+        if (categoria == null) return ensureDefaultCategoria(session);
         if (categoria.getId() != null) {
             Categoria persistent = session.find(Categoria.class, categoria.getId());
-            if (persistent != null) {
-                return persistent;
-            }
+            if (persistent != null) return persistent;
         }
         if (categoria.getNome() != null && !categoria.getNome().isBlank()) {
             Categoria byName = session.createQuery(
                             "from Categoria c where lower(c.nome) = :nome", Categoria.class)
                     .setParameter("nome", categoria.getNome().toLowerCase())
                     .uniqueResult();
-            if (byName != null) {
-                return byName;
-            }
+            if (byName != null) return byName;
         }
         Categoria novaCategoria = new Categoria();
         novaCategoria.setNome((categoria.getNome() == null || categoria.getNome().isBlank()) ? "GERAL" : categoria.getNome());
@@ -256,9 +366,7 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
 
     private List<Xingamento> resolveXingamentos(Session session, List<Xingamento> xingamentos) {
         List<Xingamento> resolved = new ArrayList<>();
-        if (xingamentos == null) {
-            return resolved;
-        }
+        if (xingamentos == null) return resolved;
         for (Xingamento xingamento : xingamentos) {
             Xingamento persistent = null;
             if (xingamento.getId() != null) {
@@ -272,9 +380,7 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
                         .setParameter("tipo", xingamento.getTipo() == null ? "" : xingamento.getTipo().toLowerCase())
                         .uniqueResult();
             }
-            if (persistent != null) {
-                resolved.add(persistent);
-            }
+            if (persistent != null) resolved.add(persistent);
         }
         return resolved;
     }
@@ -284,16 +390,11 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
                         "from Xingamento x where x.usuario.id = :usuarioId order by x.id", Xingamento.class)
                 .setParameter("usuarioId", usuarioId)
                 .list();
-        if (cadastrados.isEmpty()) {
-            return cadastrados;
-        }
-
+        if (cadastrados.isEmpty()) return cadastrados;
         List<Xingamento> padrao = new ArrayList<>();
         for (Xingamento item : cadastrados) {
             String tipo = item.getTipo() == null ? "" : item.getTipo().toUpperCase(Locale.ROOT);
-            if ("XINGAMENTO".equals(tipo) || "ELOGIO".equals(tipo)) {
-                padrao.add(item);
-            }
+            if ("XINGAMENTO".equals(tipo) || "ELOGIO".equals(tipo)) padrao.add(item);
         }
         return padrao.isEmpty() ? cadastrados : padrao;
     }
