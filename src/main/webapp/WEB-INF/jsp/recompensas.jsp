@@ -18,12 +18,14 @@
         <jsp:include page="fragments/sidebar.jsp"/>
         <main class="col-12 col-lg-10 p-4">
             <section class="avisos-hero mb-4">
-                <div class="d-flex justify-content-between flex-wrap gap-3">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
                     <div>
                         <h1 class="h2 mb-2">Recompensas</h1>
                         <p class="text-secondary mb-0">Cadastre premios para registrar progresso nas tarefas.</p>
                     </div>
-                    <div class="badge text-bg-danger fs-6 px-2 py-1">Total de pontos: <c:out value="${totalPontos}"/></div>
+                    <div class="recompensa-total-pontos badge text-bg-danger fs-6">
+                        Total de pontos: <c:out value="${totalPontos}"/>
+                    </div>
                 </div>
             </section>
             <div class="d-flex justify-content-between align-items-center gap-2 mb-2 flex-wrap">

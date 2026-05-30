@@ -7,7 +7,7 @@
         <property name="hibernate.connection.driver_class">com.mysql.cj.jdbc.Driver</property>
         <property name="hibernate.connection.url">jdbc:mysql://localhost:3306/procastinator?useSSL=false&amp;allowPublicKeyRetrieval=true&amp;serverTimezone=UTC</property>
         <property name="hibernate.connection.username">root</property>
-        <property name="hibernate.connection.password">root</property>
+        <property name="hibernate.connection.password">SUA_SENHA</property>
 
         <property name="hibernate.dialect">org.hibernate.dialect.MySQLDialect</property>
         <property name="hibernate.show_sql">true</property>
@@ -20,7 +20,5 @@
         <mapping class="com.example.procastinator.model.Tarefa"/>
         <mapping class="com.example.procastinator.model.Historico"/>
         <mapping class="com.example.procastinator.model.Recompensa"/>
-        <mapping class="com.example.procastinator.model.Equipe"/>
-        <mapping class="com.example.procastinator.model.MembroEquipe"/>
     </session-factory>
 </hibernate-configuration>

@@ -33,6 +33,22 @@ public class RecompensaDAO {
         }
     }
 
+    public List<Recompensa> listarPorEquipe(Integer equipeId) {
+        if (equipeId == null) {
+            return List.of();
+        }
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery(
+                            "select distinct r from com.example.procastinator.model.Recompensa r " +
+                                    "left join fetch r.tarefa t " +
+                                    "where t.equipe.id = :equipeId " +
+                                    "order by r.dataConquista desc, r.id desc",
+                            Recompensa.class)
+                    .setParameter("equipeId", equipeId)
+                    .list();
+        }
+    }
+
     public Recompensa buscarPorId(Integer id) {
         throw new UnsupportedOperationException("Use buscarPorId(Integer, Integer)");
     }
