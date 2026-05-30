@@ -134,7 +134,9 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
                             .setParameter("id", id).executeUpdate();
                     session.createNativeQuery("delete from tarefa_xingamento where id_tarefa = :id")
                             .setParameter("id", id).executeUpdate();
-                    registrarHistorico(session, tarefa, "EXCLUSAO", usuarioId);
+                    String titulo = tarefa.getTitulo() != null ? tarefa.getTitulo() : "Sem titulo";
+                    registrarHistorico(session, null, "EXCLUSAO", usuarioId,
+                            "Tarefa excluida: " + titulo + " (id=" + id + ")");
                     session.remove(tarefa);
                 }
                 tx.commit();
@@ -400,10 +402,15 @@ public class TarefaDAO implements GenericDAO<Tarefa, Integer> {
     }
 
     private void registrarHistorico(Session session, Tarefa tarefa, String acao, Integer usuarioId) {
+        registrarHistorico(session, tarefa, acao, usuarioId, null);
+    }
+
+    private void registrarHistorico(Session session, Tarefa tarefa, String acao, Integer usuarioId, String comentario) {
         Historico historico = new Historico();
         historico.setAcao(acao);
         historico.setDataHora(LocalDateTime.now());
         historico.setTarefa(tarefa);
+        historico.setComentario(comentario);
         if (usuarioId != null) {
             historico.setUsuario(session.getReference(Usuario.class, usuarioId));
         }
