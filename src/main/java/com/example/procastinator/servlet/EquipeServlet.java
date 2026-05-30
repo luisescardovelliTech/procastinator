@@ -1,10 +1,12 @@
 package com.example.procastinator.servlet;
 
 import com.example.procastinator.dao.EquipeDAO;
+import com.example.procastinator.dao.RecompensaDAO;
 import com.example.procastinator.dao.TarefaDAO;
 import com.example.procastinator.model.Equipe;
 import com.example.procastinator.model.MembroEquipe;
 import com.example.procastinator.model.Tarefa;
+import com.example.procastinator.web.EstatisticasComputador;
 import com.example.procastinator.web.FlashMensagens;
 import com.example.procastinator.web.SessaoUsuario;
 import jakarta.servlet.ServletException;
@@ -25,6 +27,7 @@ public class EquipeServlet extends HttpServlet {
 
     private final EquipeDAO equipeDAO = new EquipeDAO();
     private final TarefaDAO tarefaDAO = new TarefaDAO();
+    private final RecompensaDAO recompensaDAO = new RecompensaDAO();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -49,11 +52,17 @@ public class EquipeServlet extends HttpServlet {
             List<MembroEquipe> membros = equipeDAO.listarMembros(equipeId);
             List<Tarefa> tarefas = tarefaDAO.listarPorEquipe(equipeId);
             boolean isLider = equipeDAO.isLider(equipeId, usuarioId);
+            var dashboard = EstatisticasComputador.build(
+                    tarefas,
+                    recompensaDAO.listarPorEquipe(equipeId)
+            );
 
             req.setAttribute("equipe", equipe);
             req.setAttribute("membros", membros);
             req.setAttribute("tarefasEquipe", tarefas);
             req.setAttribute("isLider", isLider);
+            req.setAttribute("totalPontos", dashboard.metricas().scorePontos());
+            req.setAttribute("totalPendentes", dashboard.metricas().pendentes());
             req.setAttribute("navAtivo", "equipes");
             req.getRequestDispatcher(VIEW_DETALHE).forward(req, resp);
         } else {

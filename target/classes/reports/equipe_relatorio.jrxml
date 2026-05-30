@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="equipe_relatorio"
+              whenNoDataType="AllSectionsNoDetail"
+              pageWidth="595"
+              pageHeight="842"
+              columnWidth="555"
+              leftMargin="20"
+              rightMargin="20"
+              topMargin="20"
+              bottomMargin="20"
+              uuid="b2c3d4e5-f6a7-8901-bcde-f12345678901">
+    <property name="com.jaspersoft.studio.unit." value="pixel"/>
+
+    <parameter name="DATA_EMISSAO" class="java.lang.String"/>
+    <parameter name="NOME_EQUIPE" class="java.lang.String"/>
+    <parameter name="LIDER" class="java.lang.String"/>
+    <parameter name="TOTAL_MEMBROS" class="java.lang.String"/>
+    <parameter name="SUBTITULO_ZOEIRA" class="java.lang.String"/>
+    <parameter name="TOTAL_TAREFAS" class="java.lang.String"/>
+    <parameter name="PENDENTES" class="java.lang.String"/>
+    <parameter name="ATRASADAS" class="java.lang.String"/>
+    <parameter name="SCORE_PONTOS" class="java.lang.String"/>
+    <parameter name="RESUMO_STATUS" class="java.lang.String"/>
+    <parameter name="RESUMO_CATEGORIAS" class="java.lang.String"/>
+    <parameter name="PARECER_EQUIPE" class="java.lang.String"/>
+
+    <field name="titulo" class="java.lang.String"/>
+    <field name="status" class="java.lang.String"/>
+    <field name="prazo" class="java.lang.String"/>
+    <field name="responsavel" class="java.lang.String"/>
+    <field name="alerta" class="java.lang.String"/>
+
+    <title>
+        <band height="110">
+            <staticText>
+                <reportElement x="0" y="0" width="555" height="28"/>
+                <textElement textAlignment="Center">
+                    <font fontName="SansSerif" size="18" isBold="true"/>
+                </textElement>
+                <text><![CDATA[PROCASTINATOR]]></text>
+            </staticText>
+            <textField>
+                <reportElement x="0" y="28" width="555" height="22"/>
+                <textElement textAlignment="Center">
+                    <font fontName="SansSerif" size="13" isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA["Relatorio da Equipe: " + $P{NOME_EQUIPE}]]></textFieldExpression>
+            </textField>
+            <textField textAdjust="StretchHeight">
+                <reportElement x="0" y="52" width="555" height="18"/>
+                <textElement textAlignment="Center">
+                    <font fontName="SansSerif" size="9" isItalic="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$P{SUBTITULO_ZOEIRA}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="0" y="72" width="555" height="14"/>
+                <textElement textAlignment="Center">
+                    <font fontName="SansSerif" size="8"/>
+                </textElement>
+                <textFieldExpression><![CDATA["Emitido em: " + $P{DATA_EMISSAO} + " | Lider: " + $P{LIDER} + " | Membros: " + $P{TOTAL_MEMBROS}]]></textFieldExpression>
+            </textField>
+        </band>
+    </title>
+
+    <pageHeader>
+        <band height="120">
+            <staticText>
+                <reportElement mode="Opaque" x="0" y="0" width="555" height="18" backcolor="#1E293B" forecolor="#FFFFFF"/>
+                <textElement textAlignment="Center">
+                    <font fontName="SansSerif" size="10" isBold="true"/>
+                </textElement>
+                <text><![CDATA[INDICADORES DA EQUIPE (KPIs)]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="0" y="22" width="130" height="14"/>
+                <textElement><font fontName="SansSerif" size="9" isBold="true"/></textElement>
+                <text><![CDATA[Total de tarefas:]]></text>
+            </staticText>
+            <textField>
+                <reportElement x="130" y="22" width="60" height="14"/>
+                <textElement><font fontName="SansSerif" size="9"/></textElement>
+                <textFieldExpression><![CDATA[$P{TOTAL_TAREFAS}]]></textFieldExpression>
+            </textField>
+            <staticText>
+                <reportElement x="200" y="22" width="130" height="14"/>
+                <textElement><font fontName="SansSerif" size="9" isBold="true"/></textElement>
+                <text><![CDATA[Pendencias ativas:]]></text>
+            </staticText>
+            <textField>
+                <reportElement x="330" y="22" width="60" height="14"/>
+                <textElement><font fontName="SansSerif" size="9"/></textElement>
+                <textFieldExpression><![CDATA[$P{PENDENTES}]]></textFieldExpression>
+            </textField>
+            <staticText>
+                <reportElement x="0" y="38" width="130" height="14"/>
+                <textElement><font fontName="SansSerif" size="9" isBold="true"/></textElement>
+                <text><![CDATA[Tarefas atrasadas:]]></text>
+            </staticText>
+            <textField>
+                <reportElement x="130" y="38" width="60" height="14"/>
+                <textElement><font fontName="SansSerif" size="9"/></textElement>
+                <textFieldExpression><![CDATA[$P{ATRASADAS}]]></textFieldExpression>
+            </textField>
+            <staticText>
+                <reportElement x="200" y="38" width="130" height="14"/>
+                <textElement><font fontName="SansSerif" size="9" isBold="true"/></textElement>
+                <text><![CDATA[Score de pontos:]]></text>
+            </staticText>
+            <textField>
+                <reportElement x="330" y="38" width="60" height="14"/>
+                <textElement><font fontName="SansSerif" size="9"/></textElement>
+                <textFieldExpression><![CDATA[$P{SCORE_PONTOS}]]></textFieldExpression>
+            </textField>
+            <staticText>
+                <reportElement x="0" y="58" width="270" height="14"/>
+                <textElement><font fontName="SansSerif" size="9" isBold="true"/></textElement>
+                <text><![CDATA[Frequencia por status:]]></text>
+            </staticText>
+            <textField textAdjust="StretchHeight">
+                <reportElement x="0" y="72" width="270" height="40"/>
+                <textElement><font fontName="SansSerif" size="8"/></textElement>
+                <textFieldExpression><![CDATA[$P{RESUMO_STATUS}]]></textFieldExpression>
+            </textField>
+            <staticText>
+                <reportElement x="285" y="58" width="270" height="14"/>
+                <textElement><font fontName="SansSerif" size="9" isBold="true"/></textElement>
+                <text><![CDATA[Categorias da equipe:]]></text>
+            </staticText>
+            <textField textAdjust="StretchHeight">
+                <reportElement x="285" y="72" width="270" height="40"/>
+                <textElement><font fontName="SansSerif" size="8"/></textElement>
+                <textFieldExpression><![CDATA[$P{RESUMO_CATEGORIAS}]]></textFieldExpression>
+            </textField>
+        </band>
+    </pageHeader>
+
+    <columnHeader>
+        <band height="28">
+            <staticText>
+                <reportElement mode="Opaque" x="0" y="0" width="555" height="16" backcolor="#E2E8F0"/>
+                <textElement textAlignment="Center">
+                    <font fontName="SansSerif" size="9" isBold="true"/>
+                </textElement>
+                <text><![CDATA[TAREFAS DA EQUIPE]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="0" y="16" width="150" height="12"/>
+                <textElement><font fontName="SansSerif" size="8" isBold="true"/></textElement>
+                <text><![CDATA[Titulo]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="150" y="16" width="70" height="12"/>
+                <textElement><font fontName="SansSerif" size="8" isBold="true"/></textElement>
+                <text><![CDATA[Status]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="220" y="16" width="70" height="12"/>
+                <textElement><font fontName="SansSerif" size="8" isBold="true"/></textElement>
+                <text><![CDATA[Prazo]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="290" y="16" width="100" height="12"/>
+                <textElement><font fontName="SansSerif" size="8" isBold="true"/></textElement>
+                <text><![CDATA[Responsavel]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="390" y="16" width="165" height="12"/>
+                <textElement><font fontName="SansSerif" size="8" isBold="true"/></textElement>
+                <text><![CDATA[Situacao]]></text>
+            </staticText>
+        </band>
+    </columnHeader>
+
+    <detail>
+        <band height="18">
+            <textField textAdjust="StretchHeight">
+                <reportElement x="0" y="2" width="150" height="14"/>
+                <textElement><font fontName="SansSerif" size="8"/></textElement>
+                <textFieldExpression><![CDATA[$F{titulo}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="150" y="2" width="70" height="14"/>
+                <textElement><font fontName="SansSerif" size="8"/></textElement>
+                <textFieldExpression><![CDATA[$F{status}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="220" y="2" width="70" height="14"/>
+                <textElement><font fontName="SansSerif" size="8"/></textElement>
+                <textFieldExpression><![CDATA[$F{prazo}]]></textFieldExpression>
+            </textField>
+            <textField textAdjust="StretchHeight">
+                <reportElement x="290" y="2" width="100" height="14"/>
+                <textElement><font fontName="SansSerif" size="8"/></textElement>
+                <textFieldExpression><![CDATA[$F{responsavel}]]></textFieldExpression>
+            </textField>
+            <textField textAdjust="StretchHeight">
+                <reportElement x="390" y="2" width="165" height="14"/>
+                <textElement><font fontName="SansSerif" size="8" isItalic="true"/></textElement>
+                <textFieldExpression><![CDATA[$F{alerta}]]></textFieldExpression>
+            </textField>
+        </band>
+    </detail>
+
+    <pageFooter>
+        <band height="18">
+            <textField>
+                <reportElement x="0" y="4" width="280" height="12"/>
+                <textElement><font fontName="SansSerif" size="7"/></textElement>
+                <textFieldExpression><![CDATA["Pagina " + $V{PAGE_NUMBER} + " de " + $V{PAGE_COUNT}]]></textFieldExpression>
+            </textField>
+            <staticText>
+                <reportElement x="280" y="4" width="275" height="12"/>
+                <textElement textAlignment="Right">
+                    <font fontName="SansSerif" size="7" isItalic="true"/>
+                </textElement>
+                <text><![CDATA[Compartilhe a culpa, exporte o PDF.]]></text>
+            </staticText>
+        </band>
+    </pageFooter>
+
+    <summary>
+        <band height="120">
+            <textField textAdjust="StretchHeight">
+                <reportElement x="0" y="10" width="555" height="100"/>
+                <textElement>
+                    <font fontName="SansSerif" size="9"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$P{PARECER_EQUIPE}]]></textFieldExpression>
+            </textField>
+        </band>
+    </summary>
+
+    <noData>
+        <band height="40">
+            <staticText>
+                <reportElement x="0" y="10" width="555" height="20"/>
+                <textElement textAlignment="Center">
+                    <font fontName="SansSerif" size="10" isItalic="true"/>
+                </textElement>
+                <text><![CDATA[Nenhuma tarefa na equipe. O kanban coletivo esta zerado.]]></text>
+            </staticText>
+        </band>
+    </noData>
+</jasperReport>

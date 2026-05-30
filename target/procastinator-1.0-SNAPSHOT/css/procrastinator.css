@@ -249,6 +249,17 @@ body {
     padding: 1rem 1.25rem;
 }
 
+.recompensa-total-pontos {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    max-width: 100%;
+    white-space: nowrap;
+    padding: 0.35rem 0.75rem;
+    line-height: 1.2;
+    flex-shrink: 0;
+}
+
 .aviso-form-card {
     border-radius: 0.75rem;
 }
