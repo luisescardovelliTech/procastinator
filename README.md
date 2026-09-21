@@ -48,6 +48,6 @@ src/main/webapp/              JSPs, CSS e JS
 - **Guilherme:** módulo de equipes e tarefas
 
 ## O que eu faria diferente hoje
-- Não versionar `target/` nem `.idea/` [depois da limpeza, trocar por: "já estão fora, no `.gitignore`"]
+- Não versionar `target/`, `.idea/` nem o `hibernate.cfg.xml` desde o começo (já estão fora, no `.gitignore`)
 - Ler usuário e senha do banco de variáveis de ambiente em vez de arquivo
 - Escrever testes para os DAOs (o JUnit já está no `pom.xml`, mas os testes não)
