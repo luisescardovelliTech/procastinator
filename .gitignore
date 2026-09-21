@@ -1,1 +1,6 @@
 src/main/resources/hibernate.cfg.xml
+
+# build e IDE
+target/
+.idea/
+*.iml
